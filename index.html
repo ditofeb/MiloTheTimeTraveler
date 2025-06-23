@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milo: The Time Traveler</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 1000px;
+            height: 600px;
+            border: 3px solid #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        #gameCanvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            z-index: 100;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            color: white;
+            font-size: 14px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            z-index: 100;
+        }
+        
+        .story-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 600px;
+            z-index: 1000;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        <div id="ui">
+            <div>Scene: <span id="currentScene">Lobby</span></div>
+            <div>Pocket Watch Parts: <span id="watchParts">0/4</span></div>
+            <div>Time: <span id="timer">--</span></div>
+        </div>
+        <div id="instructions">
+            Use WASD to move, SPACE to jump, E to interact, Mouse to grab objects
+        </div>
+        <div id="storyText" class="story-text hidden">
+            <h2 id="storyTitle">Welcome to Milo's Adventure!</h2>
+            <p id="storyContent">Milo, a curious cat, discovers a mysterious pocket watch in the garage...</p>
+            <button id="continueBtn" onclick="continueStory()">Continue</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        const gameState = {
+            currentScene: 'lobby',
+            watchParts: 0,
+            timeLimit: 0,
+            gameStartTime: 0,
+            keys: {},
+            mouse: { x: 0, y: 0, isDown: false },
+            draggedObject: null,
+            level1Objects: [],
+            level2Sequence: [],
+            level2PlayerSequence: [],
+            level3SafeSands: [],
+            level4Stones: [],
+            miloPosition: { x: 100, y: 500 },
+            miloVelocity: { x: 0, y: 0 },
+            onGround: true,
+            gameCompleted: false
+        };
+
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            gameState.keys[e.key.toLowerCase()] = true;
+            if (e.key === ' ') e.preventDefault();
+        });
+
+        document.addEventListener('keyup', (e) => {
+            gameState.keys[e.key.toLowerCase()] = false;
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            gameState.mouse.x = e.clientX - rect.left;
+            gameState.mouse.y = e.clientY - rect.top;
+            gameState.mouse.isDown = true;
+            handleMouseDown();
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            gameState.mouse.isDown = false;
+            if (gameState.draggedObject) {
+                handleObjectDrop();
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            gameState.mouse.x = e.clientX - rect.left;
+            gameState.mouse.y = e.clientY - rect.top;
+        });
+
+        // Story management
+        function showStory(title, content, callback) {
+            document.getElementById('storyTitle').textContent = title;
+            document.getElementById('storyContent').textContent = content;
+            document.getElementById('storyText').classList.remove('hidden');
+            window.storyCallback = callback;
+        }
+
+        function continueStory() {
+            document.getElementById('storyText').classList.add('hidden');
+            if (window.storyCallback) {
+                window.storyCallback();
+                window.storyCallback = null;
+            }
+        }
+
+        // Milo character
+        function drawMilo() {
+            const { x, y } = gameState.miloPosition;
+            
+            // Body
+            ctx.fillStyle = '#FFA500';
+            ctx.fillRect(x - 15, y - 30, 30, 25);
+            
+            // Head
+            ctx.fillStyle = '#FFA500';
+            ctx.beginPath();
+            ctx.arc(x, y - 40, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Ears
+            ctx.fillStyle = '#FF8C00';
+            ctx.beginPath();
+            ctx.moveTo(x - 10, y - 50);
+            ctx.lineTo(x - 15, y - 35);
+            ctx.lineTo(x - 5, y - 35);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(x + 10, y - 50);
+            ctx.lineTo(x + 15, y - 35);
+            ctx.lineTo(x + 5, y - 35);
+            ctx.fill();
+            
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(x - 5, y - 42, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + 5, y - 42, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Tail
+            ctx.strokeStyle = '#FFA500';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.arc(x + 20, y - 15, 15, 0, Math.PI);
+            ctx.stroke();
+        }
+
+        function updateMilo() {
+            // Horizontal movement
+            if (gameState.keys['a'] || gameState.keys['arrowleft']) {
+                gameState.miloVelocity.x = -5;
+            } else if (gameState.keys['d'] || gameState.keys['arrowright']) {
+                gameState.miloVelocity.x = 5;
+            } else {
+                gameState.miloVelocity.x *= 0.8; // Friction
+            }
+
+            // Jumping
+            if ((gameState.keys[' '] || gameState.keys['w']) && gameState.onGround) {
+                gameState.miloVelocity.y = -15;
+                gameState.onGround = false;
+            }
+
+            // Gravity
+            gameState.miloVelocity.y += 0.8;
+
+            // Update position
+            gameState.miloPosition.x += gameState.miloVelocity.x;
+            gameState.miloPosition.y += gameState.miloVelocity.y;
+
+            // Boundaries
+            if (gameState.miloPosition.x < 20) gameState.miloPosition.x = 20;
+            if (gameState.miloPosition.x > 980) gameState.miloPosition.x = 980;
+
+            // Ground collision
+            if (gameState.miloPosition.y > 550) {
+                gameState.miloPosition.y = 550;
+                gameState.miloVelocity.y = 0;
+                gameState.onGround = true;
+            }
+        }
+
+        // Lobby Scene
+        function initLobby() {
+            gameState.currentScene = 'lobby';
+            updateUI();
+            showStory(
+                "Milo's Discovery",
+                "Milo finds a mysterious broken pocket watch in the garage. His curiosity gets the better of him as he approaches the strange device...",
+                () => {}
+            );
+        }
+
+        function drawLobby() {
+            // Background
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(0, 0, 1000, 600);
+            
+            // Garage items
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(50, 400, 200, 150); // Workbench
+            
+            // Pocket watch
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(150, 380, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#DAA520';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Interaction prompt
+            if (Math.abs(gameState.miloPosition.x - 150) < 50 && Math.abs(gameState.miloPosition.y - 380) < 50) {
+                ctx.fillStyle = 'white';
+                ctx.font = '14px Arial';
+                ctx.fillText('Press E to interact with the pocket watch', 300, 50);
+                
+                if (gameState.keys['e']) {
+                    startLevel1();
+                }
+            }
+        }
+
+        // Level 1: Place it in the right place (Machu Picchu)
+        function startLevel1() {
+            gameState.currentScene = 'level1';
+            gameState.timeLimit = 60; // 60 seconds
+            gameState.gameStartTime = Date.now();
+            gameState.miloPosition = { x: 100, y: 500 };
+            
+            // Initialize puzzle objects
+            gameState.level1Objects = [
+                { x: 200, y: 500, targetX: 700, targetY: 450, shape: 'triangle', placed: false, dragging: false },
+                { x: 300, y: 500, targetX: 750, targetY: 450, shape: 'circle', placed: false, dragging: false },
+                { x: 400, y: 500, targetX: 800, targetY: 450, shape: 'square', placed: false, dragging: false }
+            ];
+            
+            updateUI();
+            showStory(
+                "Machu Picchu - The Ancient Puzzle",
+                "Milo arrives at the mystical Machu Picchu! He must place the ancient stones in their correct positions before time runs out.",
+                () => {}
+            );
+        }
+
+        function drawLevel1() {
+            // Background - Machu Picchu
+            const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#90EE90');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1000, 600);
+            
+            // Mountains
+            ctx.fillStyle = '#696969';
+            ctx.beginPath();
+            ctx.moveTo(0, 300);
+            ctx.lineTo(200, 100);
+            ctx.lineTo(400, 250);
+            ctx.lineTo(600, 80);
+            ctx.lineTo(800, 200);
+            ctx.lineTo(1000, 150);
+            ctx.lineTo(1000, 600);
+            ctx.lineTo(0, 600);
+            ctx.fill();
+            
+            // Platform
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(0, 550, 1000, 50);
+            
+            // Target areas
+            gameState.level1Objects.forEach(obj => {
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
+                if (obj.shape === 'triangle') {
+                    ctx.beginPath();
+                    ctx.moveTo(obj.targetX, obj.targetY);
+                    ctx.lineTo(obj.targetX - 15, obj.targetY + 20);
+                    ctx.lineTo(obj.targetX + 15, obj.targetY + 20);
+                    ctx.closePath();
+                    ctx.stroke();
+                } else if (obj.shape === 'circle') {
+                    ctx.beginPath();
+                    ctx.arc(obj.targetX, obj.targetY, 15, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (obj.shape === 'square') {
+                    ctx.strokeRect(obj.targetX - 15, obj.targetY - 15, 30, 30);
+                }
+            });
+            ctx.setLineDash([]);
+            
+            // Draw objects
+            gameState.level1Objects.forEach(obj => {
+                if (!obj.placed) {
+                    let x = obj.dragging ? gameState.mouse.x : obj.x;
+                    let y = obj.dragging ? gameState.mouse.y : obj.y;
+                    
+                    ctx.fillStyle = obj.shape === 'triangle' ? '#FF6B6B' : 
+                                   obj.shape === 'circle' ? '#4ECDC4' : '#45B7D1';
+                    
+                    if (obj.shape === 'triangle') {
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x - 15, y + 20);
+                        ctx.lineTo(x + 15, y + 20);
+                        ctx.closePath();
+                        ctx.fill();
+                    } else if (obj.shape === 'circle') {
+                        ctx.beginPath();
+                        ctx.arc(x, y, 15, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (obj.shape === 'square') {
+                        ctx.fillRect(x - 15, y - 15, 30, 30);
+                    }
+                }
+            });
+            
+            // Check win condition
+            if (gameState.level1Objects.every(obj => obj.placed)) {
+                drawPocketWatch(500, 300);
+                if (Math.abs(gameState.miloPosition.x - 500) < 50 && Math.abs(gameState.miloPosition.y - 300) < 100) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = '14px Arial';
+                    ctx.fillText('Press E to collect pocket watch part', 350, 50);
+                    
+                    if (gameState.keys['e']) {
+                        gameState.watchParts++;
+                        startLevel2();
+                    }
+                }
+            }
+        }
+
+        function handleMouseDown() {
+            if (gameState.currentScene === 'level1') {
+                gameState.level1Objects.forEach(obj => {
+                    if (!obj.placed && 
+                        Math.abs(gameState.mouse.x - obj.x) < 20 && 
+                        Math.abs(gameState.mouse.y - obj.y) < 20) {
+                        obj.dragging = true;
+                        gameState.draggedObject = obj;
+                    }
+                });
+            } else if (gameState.currentScene === 'level2') {
+                // Handle Simon Says clicks
+                const stones = [
+                    { x: 300, y: 400 },
+                    { x: 400, y: 400 },
+                    { x: 500, y: 400 },
+                    { x: 600, y: 400 }
+                ];
+                
+                stones.forEach((stone, index) => {
+                    if (Math.abs(gameState.mouse.x - stone.x) < 30 && 
+                        Math.abs(gameState.mouse.y - stone.y) < 30) {
+                        gameState.level2PlayerSequence.push(index);
+                        playStoneSound(index);
+                        checkLevel2Sequence();
+                    }
+                });
+            }
+        }
+
+        function handleObjectDrop() {
+            if (gameState.draggedObject) {
+                const obj = gameState.draggedObject;
+                // Check if dropped near target
+                if (Math.abs(gameState.mouse.x - obj.targetX) < 30 && 
+                    Math.abs(gameState.mouse.y - obj.targetY) < 30) {
+                    obj.placed = true;
+                    obj.x = obj.targetX;
+                    obj.y = obj.targetY;
+                }
+                obj.dragging = false;
+                gameState.draggedObject = null;
+            }
+        }
+
+        // Level 2: Sound of the Pharaoh (Simon Says)
+        function startLevel2() {
+            gameState.currentScene = 'level2';
+            gameState.timeLimit = 45;
+            gameState.gameStartTime = Date.now();
+            gameState.miloPosition = { x: 100, y: 500 };
+            gameState.level2Sequence = [];
+            gameState.level2PlayerSequence = [];
+            
+            updateUI();
+            showStory(
+                "Pyramid Chamber - Sound of the Pharaoh",
+                "Milo finds himself in a mysterious pyramid chamber. The sacred stones glow with ancient power. He must repeat the sequence they show!",
+                () => {
+                    setTimeout(() => startLevel2Sequence(), 1000);
+                }
+            );
+        }
+
+        function startLevel2Sequence() {
+            // Generate sequence (3-5 steps)
+            const sequenceLength = 3 + gameState.watchParts;
+            gameState.level2Sequence = [];
+            for (let i = 0; i < sequenceLength; i++) {
+                gameState.level2Sequence.push(Math.floor(Math.random() * 4));
+            }
+            gameState.level2PlayerSequence = [];
+            playSequence();
+        }
+
+        function playSequence() {
+            let index = 0;
+            const interval = setInterval(() => {
+                if (index >= gameState.level2Sequence.length) {
+                    clearInterval(interval);
+                    return;
+                }
+                
+                const stoneIndex = gameState.level2Sequence[index];
+                playStoneSound(stoneIndex);
+                index++;
+            }, 800);
+        }
+
+        function playStoneSound(stoneIndex) {
+            // Visual feedback for stone activation
+            setTimeout(() => {
+                // This would play a sound in a real implementation
+            }, 100);
+        }
+
+        function checkLevel2Sequence() {
+            if (gameState.level2PlayerSequence.length === gameState.level2Sequence.length) {
+                let correct = true;
+                for (let i = 0; i < gameState.level2Sequence.length; i++) {
+                    if (gameState.level2PlayerSequence[i] !== gameState.level2Sequence[i]) {
+                        correct = false;
+                        break;
+                    }
+                }
+                
+                if (correct) {
+                    // Success!
+                    setTimeout(() => {
+                        drawPocketWatch(500, 300);
+                    }, 1000);
+                } else {
+                    // Reset and try again
+                    setTimeout(() => {
+                        startLevel2Sequence();
+                    }, 1000);
+                }
+            }
+        }
+
+        function drawLevel2() {
+            // Pyramid background
+            const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+            gradient.addColorStop(0, '#8B4513');
+            gradient.addColorStop(1, '#CD853F');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1000, 600);
+            
+            // Stone floor
+            ctx.fillStyle = '#696969';
+            ctx.fillRect(0, 550, 1000, 50);
+            
+            // Sacred stones
+            const stones = [
+                { x: 300, y: 400, color: '#FF6B6B' },
+                { x: 400, y: 400, color: '#4ECDC4' },
+                { x: 500, y: 400, color: '#45B7D1' },
+                { x: 600, y: 400, color: '#96CEB4' }
+            ];
+            
+            stones.forEach((stone, index) => {
+                ctx.fillStyle = stone.color;
+                ctx.beginPath();
+                ctx.arc(stone.x, stone.y, 25, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Highlight if in current sequence
+                const currentTime = Date.now();
+                if (gameState.level2PlayerSequence.length < gameState.level2Sequence.length) {
+                    const expectedIndex = gameState.level2Sequence[gameState.level2PlayerSequence.length];
+                    if (index === expectedIndex && Math.sin(currentTime / 200) > 0) {
+                        ctx.strokeStyle = '#FFD700';
+                        ctx.lineWidth = 4;
+                        ctx.stroke();
+                    }
+                }
+            });
+            
+            // Check win condition
+            if (gameState.level2PlayerSequence.length === gameState.level2Sequence.length &&
+                gameState.level2PlayerSequence.every((val, i) => val === gameState.level2Sequence[i])) {
+                drawPocketWatch(500, 300);
+                if (Math.abs(gameState.miloPosition.x - 500) < 50 && Math.abs(gameState.miloPosition.y - 300) < 100) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = '14px Arial';
+                    ctx.fillText('Press E to collect pocket watch part', 350, 50);
+                    
+                    if (gameState.keys['e']) {
+                        gameState.watchParts++;
+                        startLevel3();
+                    }
+                }
+            }
+        }
+
+        // Level 3: Jump to the Right Sand (Amazon Forest)
+        function startLevel3() {
+            gameState.currentScene = 'level3';
+            gameState.timeLimit = 30;
+            gameState.gameStartTime = Date.now();
+            gameState.miloPosition = { x: 100, y: 500 };
+            
+            // Generate safe sand pattern
+            gameState.level3SafeSands = [];
+            for (let i = 0; i < 8; i++) {
+                gameState.level3SafeSands.push({
+                    x: 150 + i * 100,
+                    y: 500,
+                    safe: Math.random() > 0.6
+                });
+            }
+            
+            updateUI();
+            showStory(
+                "Amazon Forest - The Treacherous Sands",
+                "In the Amazon, Milo must cross dangerous quicksand. Watch carefully which sands light up - those are safe to step on!",
+                () => {
+                    showSafeSands();
+                }
+            );
+        }
+
+        function showSafeSands() {
+            let showTime = 3000; // Show for 3 seconds
+            setTimeout(() => {
+                // After showing, hide the indicators
+            }, showTime);
+        }
+
+        function drawLevel3() {
+            // Amazon background
+            const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+            gradient.addColorStop(0, '#228B22');
+            gradient.addColorStop(1, '#006400');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1000, 600);
+            
+            // Trees
+            for (let i = 0; i < 10; i++) {
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(i * 100 + 20, 300, 20, 200);
+                ctx.fillStyle = '#228B22';
+                ctx.beginPath();
+                ctx.arc(i * 100 + 30, 320, 30, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Sand patches
+            const currentTime = Date.now();
+            const showingSafeSands = (currentTime - gameState.gameStartTime) < 3000;
+            
+            gameState.level3SafeSands.forEach(sand => {
+                if (showingSafeSands && sand.safe) {
+                    ctx.fillStyle = '#FFD700'; // Gold for safe
+                } else {
+                    ctx.fillStyle = '#F4A460'; // Sandy brown
+                }
+                ctx.fillRect(sand.x - 30, sand.y - 10, 60, 20);
+                
+                // Check collision with Milo
+                if (Math.abs(gameState.miloPosition.x - sand.x) < 40 && 
+                    Math.abs(gameState.miloPosition.y - sand.y) < 20) {
+                    if (!sand.safe) {
+                        // Milo stepped on unsafe sand - restart level
+                        startLevel3();
+                        return;
+                    }
+                }
+            });
+            
+            // Win condition - reached the end
+            if (gameState.miloPosition.x > 900) {
+                drawPocketWatch(950, 300);
+                if (Math.abs(gameState.miloPosition.x - 950) < 50) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = '14px Arial';
+                    ctx.fillText('Press E to collect pocket watch part', 750, 50);
+                    
+                    if (gameState.keys['e']) {
+                        gameState.watchParts++;
+                        startLevel4();
+                    }
+                }
+            }
+        }
+
+        // Level 4: Avoid the Falling Stones (Great Wall of China)
+        function startLevel4() {
+            gameState.currentScene = 'level4';
+            gameState.timeLimit = 45;
+            gameState.gameStartTime = Date.now();
+            gameState.miloPosition = { x: 100, y: 500 };
+            gameState.level4Stones = [];
+            
+            updateUI();
+            showStory(
+                "Great Wall of China - The Final Challenge",
+                "Milo must climb to the top of the Great Wall while avoiding falling stones. This is his final test!",
+                () => {}
+            );
+        }
+
+        function drawLevel4() {
+            // Great Wall background
+            const gradient = ctx.createLinearGradient(0, 600, 0, 0);
+            gradient.addColorStop(0, '#8B4513');
+            gradient.addColorStop(1, '#87CEEB');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1000, 600);
+            
+            // Wall structure
+            ctx.fillStyle = '#696969';
+            for (let i = 0; i < 1000; i += 50) {
+                ctx.fillRect(i, 550, 40, 50);
+                ctx.fillRect(i, 400, 40, 30);
+                ctx.fillRect(i, 250, 40, 30);
+                ctx.fillRect(i, 100, 40, 30);
+            }
+            
+            // Spawn falling stones
+            if (Math.random() < 0.02) {
+                gameState.level4Stones.push({
+                    x: Math.random() * 1000,
+                    y: 0,
+                    speed: 3 + Math.random() * 3
+                });
+            }
+            
+            // Update and draw stones
+            gameState.level4Stones = gameState.level4Stones.filter(stone => {
+                stone.y += stone.speed;
+                
+                ctx.fillStyle = '#8B4513';
+                ctx.beginPath();
+                ctx.arc(stone.x, stone.y, 15, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Check collision with Milo
+                if (Math.abs(gameState.miloPosition.x - stone.x) < 25 && 
+                    Math.abs(gameState.miloPosition.y - stone.y) < 25) {
+                    // Milo hit by stone - restart level
+                    startLevel4();
+                    return false;
+                }
+                
+                return stone.y < 650;
+            });
+            
+            // Win condition - reached the top
+            if (gameState.miloPosition.y < 150) {
+                drawPocketWatch(500, 100);
+                if (Math.abs(gameState.miloPosition.x - 500) < 50 && Math.abs(gameState.miloPosition.y - 100) < 50) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = '14px Arial';
+                    ctx.fillText('Press E to collect the final pocket watch part', 300, 50);
+                    
+                    if (gameState.keys['e']) {
+                        gameState.watchParts++;
+                        completeGame();
+                    }
+                }
+            }
+        }
+
+        // Game completion
+        function completeGame() {
+            gameState.currentScene = 'ending';
+            gameState.gameCompleted = true;
+            updateUI();
+            showStory(
+                "Journey Complete!",
+                "Milo has collected all the pocket watch parts! The device is now complete and glowing with magical energy. Time to return home!",
+                () => {
+                    showStory(
+                        "Home Sweet Home",
+                        "With a bright flash, Milo finds himself back in the garage. The pocket watch crumbles to dust, but the memories of his incredible time-traveling adventure will last forever!",
+                        () => {}
+                    );
+                }
+            );
+        }
+
+        function drawEnding() {
+            // Victory background
+            const gradient = ctx.createRadialGradient(500, 300, 0, 500, 300, 400);
+            gradient.addColorStop(0, '#FFD700');
+            gradient.addColorStop(1, '#FFA500');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1000, 600);
+            
+            // Complete pocket watch
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(500, 300, 60, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#DAA520';
+            ctx.lineWidth = 8;
+            ctx.stroke();
+            
+            // Watch hands
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(500, 300);
+            ctx.lineTo(500, 250);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(500, 300);
+            ctx.lineTo(530, 280);
+            ctx.stroke();
+            
+            // Sparkles
+            for (let i = 0; i < 20; i++) {
+                ctx.fillStyle = `hsl(${Date.now() / 10 + i * 18}, 100%, 80%)`;
+                ctx.beginPath();
+                const angle = (Date.now() / 1000 + i) % (Math.PI * 2);
+                const radius = 100 + Math.sin(Date.now() / 500 + i) * 30;
+                const x = 500 + Math.cos(angle) * radius;
+                const y = 300 + Math.sin(angle) * radius;
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Victory text
+            ctx.fillStyle = '#8B4513';
+            ctx.font = 'bold 36px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ADVENTURE COMPLETE!', 500, 150);
+            ctx.font = '18px Arial';
+            ctx.fillText('Milo the Time Traveler has returned home safely!', 500, 450);
+            ctx.textAlign = 'left';
+        }
+
+        // Utility functions
+        function drawPocketWatch(x, y) {
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#DAA520';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Glow effect
+            ctx.shadowColor = '#FFD700';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(x, y, 25, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        function updateUI() {
+            document.getElementById('currentScene').textContent = 
+                gameState.currentScene === 'lobby' ? 'Lobby' :
+                gameState.currentScene === 'level1' ? 'Level 1 - Machu Picchu' :
+                gameState.currentScene === 'level2' ? 'Level 2 - Pyramid' :
+                gameState.currentScene === 'level3' ? 'Level 3 - Amazon' :
+                gameState.currentScene === 'level4' ? 'Level 4 - Great Wall' :
+                'Game Complete';
+            
+            document.getElementById('watchParts').textContent = `${gameState.watchParts}/4`;
+            
+            if (gameState.timeLimit > 0 && !gameState.gameCompleted) {
+                const elapsed = (Date.now() - gameState.gameStartTime) / 1000;
+                const remaining = Math.max(0, gameState.timeLimit - elapsed);
+                document.getElementById('timer').textContent = Math.ceil(remaining) + 's';
+                
+                if (remaining <= 0) {
+                    // Time's up - restart current level
+                    if (gameState.currentScene === 'level1') startLevel1();
+                    else if (gameState.currentScene === 'level2') startLevel2();
+                    else if (gameState.currentScene === 'level3') startLevel3();
+                    else if (gameState.currentScene === 'level4') startLevel4();
+                }
+            } else {
+                document.getElementById('timer').textContent = '--';
+            }
+        }
+
+        // Main game loop
+        function gameLoop() {
+            // Clear canvas
+            ctx.clearRect(0, 0, 1000, 600);
+            
+            // Update game state
+            updateMilo();
+            updateUI();
+            
+            // Draw current scene
+            if (gameState.currentScene === 'lobby') {
+                drawLobby();
+            } else if (gameState.currentScene === 'level1') {
+                drawLevel1();
+            } else if (gameState.currentScene === 'level2') {
+                drawLevel2();
+            } else if (gameState.currentScene === 'level3') {
+                drawLevel3();
+            } else if (gameState.currentScene === 'level4') {
+                drawLevel4();
+            } else if (gameState.currentScene === 'ending') {
+                drawEnding();
+            }
+            
+            // Draw Milo
+            if (gameState.currentScene !== 'ending') {
+                drawMilo();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        initLobby();
+        gameLoop();
+    </script>
+</body>
+</html>
