@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milo: The Time Traveler - Level 2</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        <div id="ui">
+            <div>Scene: <span id="currentScene">Level 2 - Pyramid</span></div>
+            <div>Pocket Watch Parts: <span id="watchParts">0/4</span></div>
+            <div>Time: <span id="timer">--</span></div>
+            <div>Correct Inputs: <span id="correctInputs">0/8</span></div>
+            <div>Attempts: <span id="totalAttempts">0/10</span></div>
+        </div>
+        <div id="instructions">
+            Use WASD to move, SPACE to jump, 1-4 to input sequence
+        </div>
+        <div id="storyText" class="story-text hidden">
+            <h2 id="storyTitle"></h2>
+            <p id="storyContent"></p>
+            <button id="continueBtn" onclick="continueStory()">Continue</button>
+        </div>
+        <div id="settings" class="hidden">
+            <h2>Settings</h2>
+            <p>Volume: <span id="volumeLevel">50</span>%</p>
+            <button onclick="adjustVolume(10)">Increase Volume</button>
+            <button onclick="adjustVolume(-10)">Decrease Volume</button>
+            <button onclick="toggleSettings()">Close</button>
+        </div>
+        <button id="settingsBtn" onclick="toggleSettings()">Settings</button>
+        <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <script src="game.js" defer></script>
+    <script>
+        function waitForGameJs() {
+            if (typeof initGameState === 'function') {
+                startGame();
+            } else {
+                console.log("Waiting for game.js to load...");
+                setTimeout(waitForGameJs, 100);
+            }
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('hidden', 'correct', 'incorrect');
+            toast.classList.add('show', type);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.classList.add('hidden');
+            }, 2000);
+        }
+
+        function startGame() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            initGameState();
+            gameState.currentScene = 'level2';
+            gameState.timeLimit = 45;
+            gameState.gameStartTime = Date.now();
+            gameState.miloPosition = { x: 100, y: 500 };
+            gameState.miloVelocity = { x: 0, y: 0 };
+            gameState.onGround = true;
+            gameState.level2Sequence = [];
+            gameState.level2PlayerSequence = [];
+            gameState.correctInputs = 0;
+            gameState.totalAttempts = 0;
+            gameState.selectedObjectIndex = -1;
+
+            document.addEventListener('keydown', (e) => {
+                gameState.keys[e.key.toLowerCase()] = true;
+                if (e.key === ' ') e.preventDefault();
+                if (e.key.toLowerCase() === 'e' && gameState.correctInputs >= 8) {
+                    if (Math.abs(gameState.miloPosition.x - 100) < 50 && Math.abs(gameState.miloPosition.y - 380) < 50) {
+                        gameState.watchParts++;
+                        saveGameState();
+                        window.location.href = 'level3.html';
+                    }
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                gameState.keys[e.key.toLowerCase()] = false;
+            });
+
+            function startLevel2Sequence() {
+                if (gameState.totalAttempts >= 10 && gameState.correctInputs < 8) {
+                    gameState.correctInputs = 0;
+                    gameState.totalAttempts = 0;
+                    gameState.level2Sequence = [];
+                    gameState.level2PlayerSequence = [];
+                    document.getElementById('correctInputs').textContent = '0/8';
+                    document.getElementById('totalAttempts').textContent = '0/10';
+                    showStory(
+                        "Sequence Failed",
+                        "You didn't get 8 correct inputs! The sequence has been reset. Try again to get 8 correct inputs within 10 attempts.",
+                        () => setTimeout(() => startLevel2Sequence(), 1000)
+                    );
+                    return;
+                }
+                gameState.level2Sequence = [];
+                for (let i = 0; i < 10; i++) {
+                    gameState.level2Sequence.push(Math.floor(Math.random() * 4));
+                }
+                gameState.level2PlayerSequence = [];
+                playSequence();
+            }
+
+            function playSequence() {
+                let index = 0;
+                const interval = setInterval(() => {
+                    if (index >= gameState.level2Sequence.length || gameState.correctInputs >= 8) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    const stoneIndex = gameState.level2Sequence[index];
+                    playStoneSound(stoneIndex);
+                    index++;
+                }, 800);
+            }
+
+            function playStoneSound(stoneIndex) {
+                // Placeholder for sound
+            }
+
+            function checkPlayerInput(inputIndex) {
+                if (gameState.totalAttempts < 10 && gameState.correctInputs < 8) {
+                    gameState.totalAttempts++;
+                    gameState.level2PlayerSequence.push(inputIndex);
+                    const expectedIndex = gameState.level2Sequence[gameState.level2PlayerSequence.length - 1];
+                    if (inputIndex === expectedIndex) {
+                        gameState.correctInputs++;
+                        showToast(`Correct! ${gameState.correctInputs}/8`, 'correct');
+                        if (gameState.correctInputs >= 8) {
+                            showToast("Sequence Complete! Unlock the pocket watch.", 'correct');
+                        }
+                    } else {
+                        showToast(`Incorrect! ${10 - gameState.totalAttempts} attempts left`, 'incorrect');
+                    }
+                    document.getElementById('correctInputs').textContent = `${gameState.correctInputs}/8`;
+                    document.getElementById('totalAttempts').textContent = `${gameState.totalAttempts}/10`;
+
+                    if (gameState.totalAttempts === 10 && gameState.correctInputs < 8) {
+                        setTimeout(() => startLevel2Sequence(), 1000);
+                    }
+                }
+            }
+
+            function drawLevel2() {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+                gradient.addColorStop(0, '#8B4513');
+                gradient.addColorStop(1, '#CD853F');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 1000, 600);
+
+                ctx.fillStyle = '#696969';
+                ctx.fillRect(0, 550, 1000, 50);
+
+                const stones = [
+                    { x: 300, y: 400, color: '#FF6B6B', key: '1' },
+                    { x: 400, y: 400, color: '#4ECDC4', key: '2' },
+                    { x: 500, y: 400, color: '#45B7D1', key: '3' },
+                    { x: 600, y: 400, color: '#96CEB4', key: '4' }
+                ];
+
+                stones.forEach((stone, index) => {
+                    ctx.fillStyle = stone.color;
+                    ctx.beginPath();
+                    ctx.arc(stone.x, stone.y, 25, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = 'white';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(stone.key, stone.x, stone.y + 5);
+                    ctx.textAlign = 'left';
+
+                    const currentTime = Date.now();
+                    if (gameState.level2PlayerSequence.length < gameState.level2Sequence.length &&
+                        gameState.level2PlayerSequence.length === gameState.totalAttempts &&
+                        gameState.correctInputs < 8) {
+                        const expectedIndex = gameState.level2Sequence[gameState.level2PlayerSequence.length];
+                        if (index === expectedIndex && Math.sin(currentTime / 200) > 0) {
+                            ctx.strokeStyle = '#FFD700';
+                            ctx.lineWidth = 4;
+                            ctx.beginPath();
+                            ctx.arc(stone.x, stone.y, 25, 0, Math.PI * 2);
+                            ctx.stroke();
+                        }
+                    }
+                });
+
+                ['1', '2', '3', '4'].forEach((key, index) => {
+                    if (gameState.keys[key] && gameState.totalAttempts < 10 && gameState.correctInputs < 8) {
+                        gameState.keys[key] = false;
+                        playStoneSound(index);
+                        checkPlayerInput(index);
+                    }
+                });
+
+                if (gameState.correctInputs >= 8) {
+                    drawPocketWatch(ctx, 100, 380);
+                    if (Math.abs(gameState.miloPosition.x - 100) < 50 && Math.abs(gameState.miloPosition.y - 380) < 50) {
+                        ctx.fillStyle = 'white';
+                        ctx.font = '14px Arial';
+                        ctx.fillText('Press E to collect pocket watch part', 350, 50);
+                    }
+                }
+            }
+
+            function gameLoop() {
+                ctx.clearRect(0, 0, 1000, 600);
+                updateMilo();
+                const remainingTime = updateUI();
+                if (remainingTime !== null && remainingTime <= 0) {
+                    saveGameState();
+                    window.location.href = 'level2.html';
+                    return;
+                }
+                drawLevel2();
+                drawMilo(ctx);
+                requestAnimationFrame(gameLoop);
+            }
+
+            document.getElementById('settingsBtn').classList.add('hidden');
+            showStory(
+                "Pyramid Chamber - Sound of the Pharaoh",
+                "Milo finds himself in a mysterious pyramid chamber. The sacred stones glow in a sequence of 10. Repeat the sequence using keys 1-4 to get at least 8 correct inputs within 10 attempts!",
+                () => setTimeout(() => startLevel2Sequence(), 1000)
+            );
+            gameLoop();
+        }
+
+        waitForGameJs();
+    </script>
+</body>
+
+</html>

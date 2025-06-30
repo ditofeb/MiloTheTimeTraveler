@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milo: The Time Traveler - Level 1</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        <div id="ui">
+            <div>Scene: <span id="currentScene">Level 1 - Machu Picchu</span></div>
+            <div>Pocket Watch Parts: <span id="watchParts">0/4</span></div>
+            <div>Time: <span id="timer">--</span></div>
+        </div>
+        <div id="instructions">
+            Use WASD to move, SPACE to jump, E to interact
+        </div>
+        <div id="storyText" class="story-text hidden">
+            <h2 id="storyTitle"></h2>
+            <p id="storyContent"></p>
+            <button id="continueBtn" onclick="continueStory()">Continue</button>
+        </div>
+        <div id="settings" class="hidden">
+            <h2>Settings</h2>
+            <p>Volume: <span id="volumeLevel">50</span>%</p>
+            <button onclick="adjustVolume(10)">Increase Volume</button>
+            <button onclick="adjustVolume(-10)">Decrease Volume</button>
+            <button onclick="toggleSettings()">Close</button>
+        </div>
+        <button id="settingsBtn" onclick="toggleSettings()">Settings</button>
+    </div>
+
+    <script src="game.js" defer></script>
+    <script>
+        function waitForGameJs() {
+            if (typeof initGameState === 'function') {
+                startGame();
+            } else {
+                console.log("Waiting for game.js to load...");
+                setTimeout(waitForGameJs, 100);
+            }
+        }
+
+        function startGame() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            initGameState();
+            gameState.currentScene = 'level1';
+            gameState.timeLimit = 60;
+            gameState.gameStartTime = Date.now();
+            gameState.miloPosition = { x: 100, y: 550 };
+            gameState.miloVelocity = { x: 0, y: 0 };
+            gameState.onGround = true;
+            gameState.selectedObjectIndex = -1;
+
+            const availableX = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 750, 800, 850, 900, 950];
+            const shuffledX = availableX.sort(() => Math.random() - 0.5);
+            gameState.level1Objects = [
+                { x: shuffledX[0], y: 550, targetX: shuffledX[4], targetY: 550, shape: 'triangle', placed: false },
+                { x: shuffledX[1], y: 550, targetX: shuffledX[5], targetY: 550, shape: 'circle', placed: false },
+                { x: shuffledX[2], y: 550, targetX: shuffledX[6], targetY: 550, shape: 'square', placed: false }
+            ];
+
+            document.addEventListener('keydown', (e) => {
+                gameState.keys[e.key.toLowerCase()] = true;
+                if (e.key === ' ') e.preventDefault();
+                if (e.key.toLowerCase() === 'e') {
+                    handleLevel1Interaction();
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                gameState.keys[e.key.toLowerCase()] = false;
+            });
+
+            function handleLevel1Interaction() {
+                if (gameState.selectedObjectIndex === -1) {
+                    gameState.level1Objects.forEach((obj, index) => {
+                        if (!obj.placed && Math.abs(gameState.miloPosition.x - obj.x) < 50 && Math.abs(gameState.miloPosition.y - obj.y) < 50) {
+                            gameState.selectedObjectIndex = index;
+                        }
+                    });
+                } else {
+                    const obj = gameState.level1Objects[gameState.selectedObjectIndex];
+                    if (Math.abs(gameState.miloPosition.x - obj.targetX) < 50 && Math.abs(gameState.miloPosition.y - obj.targetY) < 50) {
+                        obj.placed = true;
+                        obj.x = obj.targetX;
+                        obj.y = obj.targetY;
+                        gameState.selectedObjectIndex = -1;
+                    }
+                }
+            }
+
+            function drawLevel1() {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+                gradient.addColorStop(0, '#87CEEB');
+                gradient.addColorStop(1, '#90EE90');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 1000, 600);
+
+                ctx.fillStyle = '#696969';
+                ctx.beginPath();
+                ctx.moveTo(0, 300);
+                ctx.lineTo(200, 100);
+                ctx.lineTo(400, 250);
+                ctx.lineTo(600, 80);
+                ctx.lineTo(800, 200);
+                ctx.lineTo(1000, 150);
+                ctx.lineTo(1000, 600);
+                ctx.lineTo(0, 600);
+                ctx.fill();
+
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(0, 550, 1000, 50);
+
+                gameState.level1Objects.forEach((obj, index) => {
+                    ctx.fillStyle = obj.shape === 'triangle' ? '#FFEBCD' :
+                        obj.shape === 'circle' ? '#DC143C' : '#1E90FF';
+
+                    if (obj.shape === 'triangle') {
+                        ctx.beginPath();
+                        ctx.moveTo(obj.x, obj.y - 20);
+                        ctx.lineTo(obj.x - 15, obj.y);
+                        ctx.lineTo(obj.x + 15, obj.y);
+                        ctx.closePath();
+                        ctx.fill();
+                    } else if (obj.shape === 'circle') {
+                        ctx.beginPath();
+                        ctx.arc(obj.x, obj.y - 15, 15, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (obj.shape === 'square') {
+                        ctx.fillRect(obj.x - 15, obj.y - 30, 30, 30);
+                    }
+
+                    if (index === gameState.selectedObjectIndex) {
+                        ctx.strokeStyle = '#FFD700';
+                        ctx.lineWidth = 3;
+                        if (obj.shape === 'triangle') {
+                            ctx.beginPath();
+                            ctx.moveTo(obj.x, obj.y - 20);
+                            ctx.lineTo(obj.x - 15, obj.y);
+                            ctx.lineTo(obj.x + 15, obj.y);
+                            ctx.closePath();
+                            ctx.stroke();
+                        } else if (obj.shape === 'circle') {
+                            ctx.beginPath();
+                            ctx.arc(obj.x, obj.y - 15, 15, 0, Math.PI * 2);
+                            ctx.stroke();
+                        } else if (obj.shape === 'square') {
+                            ctx.strokeRect(obj.x - 15, obj.y - 30, 30, 30);
+                        }
+                    }
+
+                    if (!obj.placed) {
+                        ctx.strokeStyle = '#FFD700';
+                        ctx.lineWidth = 3;
+                        ctx.setLineDash([5, 5]);
+                        if (obj.shape === 'triangle') {
+                            ctx.beginPath();
+                            ctx.moveTo(obj.targetX, obj.targetY - 20);
+                            ctx.lineTo(obj.targetX - 15, obj.targetY);
+                            ctx.lineTo(obj.targetX + 15, obj.targetY);
+                            ctx.closePath();
+                            ctx.stroke();
+                        } else if (obj.shape === 'circle') {
+                            ctx.beginPath();
+                            ctx.arc(obj.targetX, obj.targetY - 15, 15, 0, Math.PI * 2);
+                            ctx.stroke();
+                        } else if (obj.shape === 'square') {
+                            ctx.strokeRect(obj.targetX - 15, obj.targetY - 30, 30, 30);
+                        }
+                        ctx.setLineDash([]);
+                    }
+                });
+
+                if (gameState.level1Objects.every(obj => obj.placed)) {
+                    drawPocketWatch(ctx, 500, 380);
+                    if (Math.abs(gameState.miloPosition.x - 500) < 50 && Math.abs(gameState.miloPosition.y - 380) < 50) {
+                        ctx.fillStyle = 'white';
+                        ctx.font = '14px Arial';
+                        ctx.fillText('Press E to collect pocket watch part', 350, 50);
+
+                        if (gameState.keys['e']) {
+                            gameState.watchParts++;
+                            saveGameState();
+                            window.location.href = 'level2.html';
+                        }
+                    }
+                }
+            }
+
+            function gameLoop() {
+                ctx.clearRect(0, 0, 1000, 600);
+                updateMilo();
+                const remainingTime = updateUI();
+                if (remainingTime !== null && remainingTime <= 0) {
+                    saveGameState();
+                    window.location.href = 'level1.html';
+                    return;
+                }
+                drawLevel1();
+                drawMilo(ctx);
+                requestAnimationFrame(gameLoop);
+            }
+
+            document.getElementById('settingsBtn').classList.add('hidden');
+            showStory(
+                "Machu Picchu - The Ancient Puzzle",
+                "Milo arrives at the mystical Machu Picchu! He must use 'E' to select and place the ancient stones in their correct positions on the ground before time runs out.",
+                () => { }
+            );
+            gameLoop();
+        }
+
+        waitForGameJs();
+    </script>
+</body>
+
+</html>

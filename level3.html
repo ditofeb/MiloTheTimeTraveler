@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milo: The Time Traveler - Level 3</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        <div id="ui">
+            <div>Scene: <span id="currentScene">Level 3 - Amazon</span></div>
+            <div>Pocket Watch Parts: <span id="watchParts">0/4</span></div>
+            <div>Time: <span id="timer">--</span></div>
+        </div>
+        <div id="instructions">
+            Use WASD to move, SPACE to jump
+        </div>
+        <div id="storyText" class="story-text hidden">
+            <h2 id="storyTitle"></h2>
+            <p id="storyContent"></p>
+            <button id="continueBtn" onclick="continueStory()">Continue</button>
+        </div>
+        <div id="settings" class="hidden">
+            <h2>Settings</h2>
+            <p>Volume: <span id="volumeLevel">50</span>%</p>
+            <button onclick="adjustVolume(10)">Increase Volume</button>
+            <button onclick="adjustVolume(-10)">Decrease Volume</button>
+            <button onclick="toggleSettings()">Close</button>
+        </div>
+        <button id="settingsBtn" onclick="toggleSettings()">Settings</button>
+    </div>
+
+    <script src="game.js" defer></script>
+    <script>
+        function waitForGameJs() {
+            if (typeof initGameState === 'function') {
+                startGame();
+            } else {
+                console.log("Waiting for game.js to load...");
+                setTimeout(waitForGameJs, 100);
+            }
+        }
+
+        function startGame() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            initGameState();
+            gameState.currentScene = 'level3';
+            gameState.timeLimit = 30;
+            gameState.gameStartTime = Date.now();
+            gameState.miloPosition = { x: 100, y: 500 };
+            gameState.miloVelocity = { x: 0, y: 0 };
+            gameState.onGround = true;
+            gameState.level3SafeSands = [];
+            gameState.selectedObjectIndex = -1;
+
+            for (let i = 0; i < 8; i++) {
+                gameState.level3SafeSands.push({
+                    x: 150 + i * 100,
+                    y: 500,
+                    safe: Math.random() > 0.6
+                });
+            }
+
+            document.addEventListener('keydown', (e) => {
+                gameState.keys[e.key.toLowerCase()] = true;
+                if (e.key === ' ') e.preventDefault();
+                if (e.key.toLowerCase() === 'e' && gameState.miloPosition.x > 900) {
+                    if (Math.abs(gameState.miloPosition.x - 950) < 50) {
+                        gameState.watchParts++;
+                        saveGameState();
+                        window.location.href = 'level4.html';
+                    }
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                gameState.keys[e.key.toLowerCase()] = false;
+            });
+
+            function showSafeSands() {
+                setTimeout(() => { }, 3000);
+            }
+
+            function drawLevel3() {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+                gradient.addColorStop(0, '#228B22');
+                gradient.addColorStop(1, '#006400');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 1000, 600);
+
+                for (let i = 0; i < 10; i++) {
+                    ctx.fillStyle = '#8B4513';
+                    ctx.fillRect(i * 100 + 20, 300, 20, 200);
+                    ctx.fillStyle = '#228B22';
+                    ctx.beginPath();
+                    ctx.arc(i * 100 + 30, 320, 30, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                const currentTime = Date.now();
+                const showingSafeSands = (currentTime - gameState.gameStartTime) < 3000;
+
+                gameState.level3SafeSands.forEach(sand => {
+                    if (showingSafeSands && sand.safe) {
+                        ctx.fillStyle = '#FFD700';
+                    } else {
+                        ctx.fillStyle = '#F4A460';
+                    }
+                    ctx.fillRect(sand.x - 30, sand.y - 10, 60, 20);
+
+                    if (Math.abs(gameState.miloPosition.x - sand.x) < 40 &&
+                        Math.abs(gameState.miloPosition.y - sand.y) < 20) {
+                        if (!sand.safe) {
+                            saveGameState();
+                            window.location.href = 'level3.html';
+                            return;
+                        }
+                    }
+                });
+
+                if (gameState.miloPosition.x > 900) {
+                    drawPocketWatch(ctx, 950, 500);
+                    if (Math.abs(gameState.miloPosition.x - 950) < 50) {
+                        ctx.fillStyle = 'white';
+                        ctx.font = '14px Arial';
+                        ctx.fillText('Press E to collect pocket watch part', 750, 50);
+                    }
+                }
+            }
+
+            function gameLoop() {
+                ctx.clearRect(0, 0, 1000, 600);
+                updateMilo();
+                const remainingTime = updateUI();
+                if (remainingTime !== null && remainingTime <= 0) {
+                    saveGameState();
+                    window.location.href = 'level3.html';
+                    return;
+                }
+                drawLevel3();
+                drawMilo(ctx);
+                requestAnimationFrame(gameLoop);
+            }
+
+            document.getElementById('settingsBtn').classList.add('hidden');
+            showStory(
+                "Amazon Forest - The Treacherous Sands",
+                "In the Amazon, Milo must cross dangerous quicksand. Watch carefully which sands light up - those are safe to step on!",
+                () => showSafeSands()
+            );
+            gameLoop();
+        }
+        waitForGameJs();
+    </script>
+</body>
+
+</html>

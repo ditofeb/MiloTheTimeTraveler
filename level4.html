@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milo: The Time Traveler - Level 4</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        <div id="ui">
+            <div>Scene: <span id="currentScene">Level 4 - Great Wall</span></div>
+            <div>Pocket Watch Parts: <span id="watchParts">0/4</span></div>
+            <div>Time: <span id="timer">--</span></div>
+        </div>
+        <div id="instructions">
+            Use WASD to move, SPACE to jump
+        </div>
+        <div id="storyText" class="story-text hidden">
+            <h2 id="storyTitle"></h2>
+            <p id="storyContent"></p>
+            <button id="continueBtn" onclick="continueStory()">Continue</button>
+        </div>
+        <div id="settings" class="hidden">
+            <h2>Settings</h2>
+            <p>Volume: <span id="volumeLevel">50</span>%</p>
+            <button onclick="adjustVolume(10)">Increase Volume</button>
+            <button onclick="adjustVolume(-10)">Decrease Volume</button>
+            <button onclick="toggleSettings()">Close</button>
+        </div>
+        <button id="settingsBtn" onclick="toggleSettings()">Settings</button>
+    </div>
+
+    <script src="game.js" defer></script>
+    <script>
+        function waitForGameJs() {
+            if (typeof initGameState === 'function') {
+                startGame();
+            } else {
+                console.log("Waiting for game.js to load...");
+                setTimeout(waitForGameJs, 100);
+            }
+        }
+
+        function startGame() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            initGameState();
+            gameState.currentScene = 'level4';
+            gameState.timeLimit = 45;
+            gameState.gameStartTime = Date.now();
+            gameState.miloPosition = { x: 100, y: 500 };
+            gameState.miloVelocity = { x: 0, y: 0 };
+            gameState.onGround = true;
+            gameState.level4Stones = [];
+            gameState.selectedObjectIndex = -1;
+
+            document.addEventListener('keydown', (e) => {
+                gameState.keys[e.key.toLowerCase()] = true;
+                if (e.key === ' ') e.preventDefault();
+                if (e.key.toLowerCase() === 'e' && gameState.miloPosition.y < 150) {
+                    if (Math.abs(gameState.miloPosition.x - 500) < 50 && Math.abs(gameState.miloPosition.y - 380) < 50) {
+                        gameState.watchParts++;
+                        saveGameState();
+                        window.location.href = 'ending.html';
+                    }
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                gameState.keys[e.key.toLowerCase()] = false;
+            });
+
+            function drawLevel4() {
+                const gradient = ctx.createLinearGradient(0, 600, 0, 0);
+                gradient.addColorStop(0, '#8B4513');
+                gradient.addColorStop(1, '#87CEEB');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 1000, 600);
+
+                ctx.fillStyle = '#696969';
+                for (let i = 0; i < 1000; i += 50) {
+                    ctx.fillRect(i, 550, 40, 50);
+                    ctx.fillRect(i, 400, 40, 30);
+                    ctx.fillRect(i, 250, 40, 30);
+                    ctx.fillRect(i, 100, 40, 30);
+                }
+
+                if (Math.random() < 0.02) {
+                    gameState.level4Stones.push({
+                        x: Math.random() * 1000,
+                        y: 0,
+                        speed: 3 + Math.random() * 3
+                    });
+                }
+
+                gameState.level4Stones = gameState.level4Stones.filter(stone => {
+                    stone.y += stone.speed;
+
+                    ctx.fillStyle = '#8B4513';
+                    ctx.beginPath();
+                    ctx.arc(stone.x, stone.y, 15, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (Math.abs(gameState.miloPosition.x - stone.x) < 25 &&
+                        Math.abs(gameState.miloPosition.y - stone.y) < 25) {
+                        saveGameState();
+                        window.location.href = 'level4.html';
+                        return false;
+                    }
+
+                    return stone.y < 650;
+                });
+
+                if (gameState.miloPosition.y < 150) {
+                    drawPocketWatch(ctx, 500, 380);
+                    if (Math.abs(gameState.miloPosition.x - 500) < 50 && Math.abs(gameState.miloPosition.y - 380) < 50) {
+                        ctx.fillStyle = 'white';
+                        ctx.font = '14px Arial';
+                        ctx.fillText('Press E to collect the final pocket watch part', 300, 50);
+                    }
+                }
+            }
+
+            function gameLoop() {
+                ctx.clearRect(0, 0, 1000, 600);
+                updateMilo();
+                const remainingTime = updateUI();
+                if (remainingTime !== null && remainingTime <= 0) {
+                    saveGameState();
+                    window.location.href = 'level4.html';
+                    return;
+                }
+                drawLevel4();
+                drawMilo(ctx);
+                requestAnimationFrame(gameLoop);
+            }
+
+            document.getElementById('settingsBtn').classList.add('hidden');
+            showStory(
+                "Great Wall of China - The Final Challenge",
+                "Milo must climb to the top of the Great Wall while avoiding falling stones. This is his final test!",
+                () => { }
+            );
+            gameLoop();
+        }
+        waitForGameJs();
+    </script>
+</body>
+
+</html>
