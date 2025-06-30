@@ -14,7 +14,8 @@ const gameState = {
     miloPosition: { x: 100, y: 500 },
     miloVelocity: { x: 0, y: 0 },
     onGround: true,
-    gameCompleted: false
+    gameCompleted: false,
+    interactionPressed: false, 
 };
 
 let isPaused = false;
