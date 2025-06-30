@@ -15,7 +15,7 @@ const gameState = {
     miloVelocity: { x: 0, y: 0 },
     onGround: true,
     gameCompleted: false,
-    interactionPressed: false, 
+    interactionPressed: false,
 };
 
 let isPaused = false;
@@ -116,12 +116,12 @@ function drawMilo() {
 }
 
 function updateMilo() {
-    if (gameState.keys['a'] || gameState.keys['arrowleft']) {
-        gameState.miloVelocity.x = -5;
-    } else if (gameState.keys['d'] || gameState.keys['arrowright']) {
-        gameState.miloVelocity.x = 5;
+    if (gameState.keys['a']) {
+        gameState.miloVelocity.x = -3;
+    } else if (gameState.keys['d']) {
+        gameState.miloVelocity.x = 3;
     } else {
-        gameState.miloVelocity.x *= 0.8;
+        gameState.miloVelocity.x *= 0.85;
     }
 
     if ((gameState.keys[' '] || gameState.keys['w']) && gameState.onGround) {
