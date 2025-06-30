@@ -118,6 +118,15 @@
         document.addEventListener('keydown', (e) => {
             gameState.keys[e.key.toLowerCase()] = true;
             if (e.key === ' ') e.preventDefault();
+
+            if (e.key === 'Escape') {
+            if (!isPaused) {
+                pauseGame();
+            } else {
+                resumeGame();
+            }
+        }
+
         });
 
         document.addEventListener('keyup', (e) => {
@@ -198,12 +207,14 @@
             ctx.arc(x + 5, y - 42, 2, 0, Math.PI * 2);
             ctx.fill();
             
-            // Tail
+            // Tail animasi naik turun berdasarkan waktu
+            const tailOffset = Math.sin(Date.now() / 150) * 5;
             ctx.strokeStyle = '#FFA500';
             ctx.lineWidth = 8;
             ctx.beginPath();
-            ctx.arc(x + 20, y - 15, 15, 0, Math.PI);
+            ctx.arc(x + 20, y - 15 + tailOffset, 15, 0, Math.PI);
             ctx.stroke();
+
         }
 
         function updateMilo() {
@@ -218,7 +229,7 @@
 
             // Jumping
             if ((gameState.keys[' '] || gameState.keys['w']) && gameState.onGround) {
-                gameState.miloVelocity.y = -15;
+                gameState.miloVelocity.y = -20;
                 gameState.onGround = false;
             }
 
@@ -241,10 +252,21 @@
             }
         }
 
+        function playCollectSound() {
+            const audio = document.getElementById('collectSound');
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(err => {
+                    console.warn('Autoplay blocked or error:', err);
+                });
+            }
+        }
+
         // Lobby Scene
         function initLobby() {
             gameState.currentScene = 'lobby';
             updateUI();
+            playMusic('lobby');
             showStory(
                 "Milo's Discovery",
                 "Milo finds a mysterious broken pocket watch in the garage. His curiosity gets the better of him as he approaches the strange device...",
@@ -277,7 +299,9 @@
                 ctx.fillText('Press E to interact with the pocket watch', 300, 50);
                 
                 if (gameState.keys['e']) {
-                    startLevel1();
+                    fadeOutIn(() => {
+                        startLevel1();
+                    });
                 }
             }
         }
@@ -285,6 +309,7 @@
         // Level 1: Place it in the right place (Machu Picchu)
         function startLevel1() {
             gameState.currentScene = 'level1';
+            playMusic('level1');
             gameState.timeLimit = 60; // 60 seconds
             gameState.gameStartTime = Date.now();
             gameState.miloPosition = { x: 100, y: 500 };
@@ -386,8 +411,11 @@
                     ctx.fillText('Press E to collect pocket watch part', 350, 50);
                     
                     if (gameState.keys['e']) {
+                        playCollectSound();
                         gameState.watchParts++;
-                        startLevel2();
+                        fadeOutIn(() => {
+                            startLevel2();
+                        });
                     }
                 }
             }
@@ -441,6 +469,7 @@
         // Level 2: Sound of the Pharaoh (Simon Says)
         function startLevel2() {
             gameState.currentScene = 'level2';
+            playMusic('level2');
             gameState.timeLimit = 45;
             gameState.gameStartTime = Date.now();
             gameState.miloPosition = { x: 100, y: 500 };
@@ -561,8 +590,11 @@
                     ctx.fillText('Press E to collect pocket watch part', 350, 50);
                     
                     if (gameState.keys['e']) {
+                        playCollectSound();
                         gameState.watchParts++;
-                        startLevel3();
+                        fadeOutIn(() => {
+                            startLevel3();
+                        });
                     }
                 }
             }
@@ -571,6 +603,7 @@
         // Level 3: Jump to the Right Sand (Amazon Forest)
         function startLevel3() {
             gameState.currentScene = 'level3';
+            playMusic('level3');
             gameState.timeLimit = 30;
             gameState.gameStartTime = Date.now();
             gameState.miloPosition = { x: 100, y: 500 };
@@ -652,8 +685,11 @@
                     ctx.fillText('Press E to collect pocket watch part', 750, 50);
                     
                     if (gameState.keys['e']) {
+                        playCollectSound();
                         gameState.watchParts++;
-                        startLevel4();
+                        fadeOutIn(() => {
+                            startLevel4();
+                        });
                     }
                 }
             }
@@ -662,6 +698,7 @@
         // Level 4: Avoid the Falling Stones (Great Wall of China)
         function startLevel4() {
             gameState.currentScene = 'level4';
+            playMusic('level4');
             gameState.timeLimit = 45;
             gameState.gameStartTime = Date.now();
             gameState.miloPosition = { x: 100, y: 500 };
@@ -730,6 +767,7 @@
                     ctx.fillText('Press E to collect the final pocket watch part', 300, 50);
                     
                     if (gameState.keys['e']) {
+                        playCollectSound();
                         gameState.watchParts++;
                         completeGame();
                     }
@@ -741,6 +779,7 @@
         function completeGame() {
             gameState.currentScene = 'ending';
             gameState.gameCompleted = true;
+            playMusic('ending');
             updateUI();
             showStory(
                 "Journey Complete!",
@@ -855,6 +894,7 @@
 
         // Main game loop
         function gameLoop() {
+            if (isPaused) return;
             // Clear canvas
             ctx.clearRect(0, 0, 1000, 600);
             
@@ -885,9 +925,102 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Start the game
-        initLobby();
-        gameLoop();
+        function startGame() {
+            fadeOutIn(() => {
+                document.getElementById('mainMenu').style.display = 'none';
+                initLobby();
+                gameLoop();
+            });
+        }
+
+        function pauseGame() {
+            isPaused = true;
+            document.getElementById('pauseMenu').style.display = 'flex';
+        }
+
+        function resumeGame() {
+            isPaused = false;
+            document.getElementById('pauseMenu').style.display = 'none';
+            requestAnimationFrame(gameLoop);
+        }
+
+        function showInstructions() {
+            alert("🎮 Petunjuk Permainan:\n\n- WASD: Bergerak\n- SPACE: Melompat\n- E: Interaksi\n- Mouse: Menggerakkan benda");
+        }
+        // initLobby();
+        // gameLoop();
+        // Game dimulai saat klik tombol "Mulai"
+
+        let isPaused = false;
+
+        function fadeOutIn(callback) {
+            const overlay = document.getElementById('fadeOverlay');
+            overlay.style.transition = 'opacity 0.8s';
+            overlay.style.opacity = '1';
+            overlay.style.pointerEvents = 'auto';
+
+            setTimeout(() => {
+                if (callback) callback(); // jalankan proses (pindah scene, dst)
+
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.style.pointerEvents = 'none';
+                }, 800);
+            }, 800);
+        }
+
+        function stopAllMusic() {
+            const tracks = ['lobby', 'level1', 'level2', 'level3', 'level4', 'ending'];
+            tracks.forEach(id => {
+                const audio = document.getElementById(`music-${id}`);
+                if (audio) {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }
+            });
+        }
+
+        function playMusic(id) {
+            stopAllMusic();
+            const music = document.getElementById(`music-${id}`);
+            if (music) {
+                music.volume = 0.9; // bisa disesuaikan
+                music.play().catch(e => console.warn("Autoplay blocked:", e));
+            }
+        }
+
+
     </script>
+        <audio id="collectSound" src="515736__limati__retro-coin-06.wav" preload="auto"></audio>
+
+        <!-- Main Menu -->
+        <div id="mainMenu" style="position: fixed; inset: 0; background: linear-gradient(#222, #444); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;">
+            <h1 style="font-size: 40px; margin-bottom: 20px;">Milo: The Time Traveler</h1>
+            <button onclick="startGame()" style="padding: 10px 20px; font-size: 18px; margin: 10px;">Mulai</button>
+            <button onclick="showInstructions()" style="padding: 10px 20px; font-size: 18px; margin: 10px;">Petunjuk</button>
+        </div>
+        
+        <!-- Pause Menu -->
+        <div id="pauseMenu" style="position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 9998;">
+            <h2 style="color: white; margin-bottom: 20px;">⏸ Game Dijeda</h2>
+            <button onclick="resumeGame()" style="padding: 10px 20px; font-size: 18px; margin: 10px;">Lanjutkan</button>
+            <button onclick="location.reload()" style="padding: 10px 20px; font-size: 18px; margin: 10px;">Keluar ke Menu</button>
+        </div>
+
+        <!-- Fade Overlay -->
+        <div id="fadeOverlay" style="position: fixed; inset: 0; background: black; opacity: 0; pointer-events: none; z-index: 9997; transition: opacity 1s;"></div>
+
+        <!-- Background Music -->
+        <audio id="music-lobby" src="music/lobby.mp3" loop></audio>
+        <audio id="music-level1" src="music/machu.mp3" loop></audio>
+        <audio id="music-level2" src="music/egypt.mp3" loop></audio>
+        <audio id="music-level3" src="music/amazon.mp3" loop></audio>
+        <audio id="music-level4" src="music/china.mp3" loop></audio>
+        <audio id="music-ending" src="music/victory.mp3" loop></audio>
+
+
+
 </body>
+
+
 </html>
