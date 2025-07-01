@@ -128,6 +128,52 @@ function drawLevel2() {
     }
 }
 
+function updateMilo_Level2() {
+    const moveSpeed = 2;
+    const jumpPower = -13;
+    const gravity = 0.5;
+
+    // Reset status interaksi saat tombol 'E' dilepas
+    if (!gameState.keys['e']) {
+        gameState.interactionPressed = false;
+    }
+
+    // Pergerakan Horizontal
+    if (gameState.keys['a'] || gameState.keys['arrowleft']) {
+        gameState.miloVelocity.x = -moveSpeed;
+    } else if (gameState.keys['d'] || gameState.keys['arrowright']) {
+        gameState.miloVelocity.x = moveSpeed;
+    } else {
+        gameState.miloVelocity.x *= 0.85; // Efek gesekan
+    }
+
+    // Melompat
+    if ((gameState.keys[' '] || gameState.keys['w']) && gameState.canJump) {
+        gameState.miloVelocity.y = jumpPower;
+        gameState.canJump = false;
+        gameState.onGround = false;
+    }
+
+    // Terapkan gravitasi dan perbarui posisi
+    gameState.miloVelocity.y += gravity;
+    gameState.miloPosition.x += gameState.miloVelocity.x;
+    gameState.miloPosition.y += gameState.miloVelocity.y;
+
+    // Jaga agar Milo tidak keluar dari layar
+    if (gameState.miloPosition.x < 20) gameState.miloPosition.x = 20;
+    if (gameState.miloPosition.x > 980) gameState.miloPosition.x = 980;
+
+    // Tabrakan dengan tanah
+    if (gameState.miloPosition.y >= 550) {
+        gameState.miloPosition.y = 550;
+        gameState.miloVelocity.y = 0;
+        gameState.onGround = true;
+        gameState.canJump = true;
+    } else {
+        gameState.onGround = false;
+    }
+}
+
 function handleMouseDownLevel2() {
     const stones = [
         { x: 300, y: 400 },

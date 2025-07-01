@@ -5,7 +5,6 @@ if (typeof gameState === 'undefined') {
         miloVelocity: { x: 0, y: 0 },
         onGround: false,
         watchParts: 0
-        // Other properties can be added as needed
     };
 }
 
@@ -15,7 +14,6 @@ function getRandomInt(min, max) {
 }
 
 function startLevel1() {
-    // Reset state level1 jika sudah ada
     if (gameState.level1Platforms) {
         delete gameState.level1Platforms;
     }
@@ -25,74 +23,54 @@ function startLevel1() {
 
     gameState.currentScene = 'level1';
     playMusic('level1');
-    gameState.timeLimit = 90;
+    gameState.timeLimit = 120; // Waktu ditambah untuk menikmati pemandangan
     gameState.gameStartTime = Date.now();
     gameState.miloPosition = { x: 100, y: 500 };
     gameState.draggedObject = null;
     gameState.canJump = true;
     gameState.interactionPressed = false;
 
-    // Definisikan rentang untuk platform agar tetap dapat dijangkau
+    // Rentang platform yang disesuaikan untuk estetika baru
     const platformRanges = [
-        { xMin: 150, xMax: 250, yMin: 480, yMax: 510, width: 120, height: 20 },
-        { xMin: 300, xMax: 400, yMin: 430, yMax: 460, width: 140, height: 20 },
-        { xMin: 480, xMax: 560, yMin: 400, yMax: 430, width: 100, height: 15 },
-        { xMin: 620, xMax: 720, yMin: 380, yMax: 410, width: 160, height: 20 },
-        { xMin: 780, xMax: 860, yMin: 330, yMax: 360, width: 120, height: 20 }
+        { xMin: 150, xMax: 220, yMin: 470, yMax: 490, width: 130, height: 25 },
+        { xMin: 300, xMax: 400, yMin: 420, yMax: 440, width: 150, height: 25 },
+        { xMin: 480, xMax: 560, yMin: 370, yMax: 390, width: 120, height: 20 },
+        { xMin: 620, xMax: 720, yMin: 320, yMax: 340, width: 160, height: 25 },
+        { xMin: 780, xMax: 860, yMin: 270, yMax: 290, width: 130, height: 20 }
     ];
 
-    // Randomisasi posisi platform
     gameState.level1Platforms = platformRanges.map(range => ({
         x: getRandomInt(range.xMin, range.xMax),
         y: getRandomInt(range.yMin, range.yMax),
         width: range.width,
         height: range.height,
-        fillColor: range === platformRanges[0] ? '#A0522D' :
-                     range === platformRanges[1] ? '#CD853F' :
-                     range === platformRanges[2] ? '#DEB887' :
-                     range === platformRanges[3] ? '#D2691E' : '#B8860B',
-        strokeColor: range === platformRanges[0] ? '#D2B48C' :
-                       range === platformRanges[1] ? '#DAA520' :
-                       range === platformRanges[2] ? '#F4A460' :
-                       range === platformRanges[3] ? '#F4A460' : '#FFD700'
-
     }));
 
-    // --- MODIFIKASI UNTUK LOKASI SPAWN ---
-
-    // Buat daftar semua permukaan spawn yang memungkinkan (platform dan tanah)
     const allSpawnSurfaces = [
-        // Tanah
         { x: 0, y: 540, width: 1000 },
-        // Semua platform
         ...gameState.level1Platforms
     ];
 
-    // Acak permukaan spawn untuk memastikan penugasan acak
     for (let i = allSpawnSurfaces.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [allSpawnSurfaces[i], allSpawnSurfaces[j]] = [allSpawnSurfaces[j], allSpawnSurfaces[i]];
     }
 
-    // Tetapkan lokasi awal untuk objek di permukaan ini
     const objectStartLocations = allSpawnSurfaces.slice(0, 3).map(surface => ({
         x: getRandomInt(surface.x, surface.x + surface.width - 30),
-        y: surface.y - 15 // Tempatkan objek di atas permukaan
+        y: surface.y - 18
     }));
 
-    // Randomisasi posisi target di platform (kecuali platform final)
     const possibleTargetLocations = gameState.level1Platforms.slice(0, 3).map(platform => ({
         x: getRandomInt(platform.x, platform.x + platform.width - 30),
-        y: platform.y - 15
+        y: platform.y - 18
     }));
 
-    // Acak target locations
     for (let i = possibleTargetLocations.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [possibleTargetLocations[i], possibleTargetLocations[j]] = [possibleTargetLocations[j], possibleTargetLocations[i]];
     }
 
-    // Inisialisasi objek dengan posisi dan target yang diacak
     gameState.level1Objects = [
         { x: objectStartLocations[0].x, y: objectStartLocations[0].y, shape: 'triangle', placed: false, carrying: false, targetX: possibleTargetLocations[0].x, targetY: possibleTargetLocations[0].y },
         { x: objectStartLocations[1].x, y: objectStartLocations[1].y, shape: 'circle', placed: false, carrying: false, targetX: possibleTargetLocations[1].x, targetY: possibleTargetLocations[1].y },
@@ -107,112 +85,94 @@ function startLevel1() {
     );
 }
 
+// *** FUNGSI GAMBAR BARU UNTUK TEMA MACHU PICCHU ***
 function drawLevel1() {
+    // 1. Latar Belakang Langit Andes dengan Matahari Terbenam
     const skyGradient = ctx.createLinearGradient(0, 0, 0, 600);
-    skyGradient.addColorStop(0, '#87CEEB');
-    skyGradient.addColorStop(0.3, '#B0E0E6');
-    skyGradient.addColorStop(0.7, '#98FB98');
-    skyGradient.addColorStop(1, '#228B22');
+    skyGradient.addColorStop(0, '#4A708B'); // Biru tua di atas
+    skyGradient.addColorStop(0.5, '#87CEEB'); // Biru langit
+    skyGradient.addColorStop(0.8, '#FFB6C1'); // Merah muda
+    skyGradient.addColorStop(1, '#FFA07A');   // Oranye terang di cakrawala
     ctx.fillStyle = skyGradient;
     ctx.fillRect(0, 0, 1000, 600);
 
-    ctx.fillStyle = '#4682B4';
-    ctx.globalAlpha = 0.6;
+    // Gambar matahari
+    ctx.fillStyle = 'rgba(255, 255, 180, 0.8)';
     ctx.beginPath();
-    ctx.moveTo(0, 300);
-    ctx.lineTo(200, 150);
-    ctx.lineTo(400, 200);
-    ctx.lineTo(600, 100);
-    ctx.lineTo(800, 180);
-    ctx.lineTo(1000, 120);
-    ctx.lineTo(1000, 600);
-    ctx.lineTo(0, 600);
+    ctx.arc(850, 150, 60, 0, Math.PI * 2);
     ctx.fill();
-    ctx.globalAlpha = 1.0;
 
-    ctx.fillStyle = '#8B4513';
-    ctx.globalAlpha = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(0, 400);
-    ctx.lineTo(150, 250);
-    ctx.lineTo(300, 320);
-    ctx.lineTo(500, 200);
-    ctx.lineTo(700, 280);
-    ctx.lineTo(900, 220);
-    ctx.lineTo(1000, 350);
-    ctx.lineTo(1000, 600);
-    ctx.lineTo(0, 600);
-    ctx.fill();
-    ctx.globalAlpha = 1.0;
+    // 2. Siluet Pegunungan Berlapis untuk Efek Kedalaman
+    drawMountainRange(400, '#2F4F4F', 0.8); // Pegunungan terjauh (paling gelap)
+    drawMountainRange(450, '#556B2F', 0.6); // Pegunungan tengah
+    drawMountainRange(500, '#8FBC8F', 0.4); // Pegunungan terdekat (paling terang)
 
+    // 3. Menggambar Tanah dan Terasering
     const groundGradient = ctx.createLinearGradient(0, 550, 0, 600);
-    groundGradient.addColorStop(0, '#8B5A2B');
-    groundGradient.addColorStop(1, '#5C4033');
+    groundGradient.addColorStop(0, '#556B2F'); // Hijau tua rumput
+    groundGradient.addColorStop(1, '#8B4513'); // Coklat tanah
     ctx.fillStyle = groundGradient;
     ctx.fillRect(0, 550, 1000, 50);
 
-    ctx.strokeStyle = '#6B4423';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 1000; i += 50) {
-        ctx.beginPath();
-        ctx.moveTo(i, 550);
-        ctx.lineTo(i, 600);
-        ctx.stroke();
-    }
-
+    // 4. Menggambar Platform Batu Khas Inka
     gameState.level1Platforms.forEach(platform => {
-        drawPlatform(platform.x, platform.y, platform.width, platform.height, platform.fillColor, platform.strokeColor);
+        drawStonePlatform(platform.x, platform.y, platform.width, platform.height);
     });
 
+    // 5. Dekorasi Khas Inka dan Vegetasi
     drawIncanDecorations();
 
+    // 6. Menggambar Target Objek dengan Gaya Kuno
     gameState.level1Objects.forEach(obj => {
         if (!obj.placed) {
             ctx.save();
             ctx.shadowColor = '#FFD700';
-            ctx.shadowBlur = 15;
-            ctx.strokeStyle = '#FFD700';
+            ctx.shadowBlur = 20;
+            ctx.strokeStyle = 'rgba(255, 215, 0, 0.9)';
             ctx.lineWidth = 3;
-            ctx.setLineDash([8, 4]);
+            ctx.setLineDash([10, 5]);
             drawShapeOutline(obj.targetX, obj.targetY, obj.shape);
             ctx.restore();
             ctx.setLineDash([]);
         } else {
             ctx.save();
-            ctx.shadowColor = '#00FF00';
-            ctx.shadowBlur = 10;
-            ctx.strokeStyle = '#00FF00';
-            ctx.lineWidth = 3;
+            ctx.shadowColor = '#32CD32';
+            ctx.shadowBlur = 15;
+            ctx.strokeStyle = 'rgba(0, 255, 127, 0.9)';
+            ctx.lineWidth = 4;
             drawShapeOutline(obj.targetX, obj.targetY, obj.shape);
             ctx.restore();
         }
     });
 
+    // 7. Menggambar Objek Puzzle Bergaya Artefak Batu
     gameState.level1Objects.forEach(obj => {
         if (!obj.placed) {
             let x = obj.carrying ? gameState.miloPosition.x : obj.x;
-            let y = obj.carrying ? gameState.miloPosition.y - 35 : obj.y;
+            let y = obj.carrying ? gameState.miloPosition.y - 40 : obj.y;
             drawEnhancedShape(x, y, obj.shape, obj.carrying);
         }
     });
 
+    // Logika untuk menyelesaikan level
     if (gameState.level1Objects.every(obj => obj.placed)) {
         const finalPlatform = gameState.level1Platforms[4];
         ctx.save();
         ctx.shadowColor = '#FFD700';
-        ctx.shadowBlur = 25;
-        drawPocketWatch(finalPlatform.x + 60, finalPlatform.y - 10);
+        ctx.shadowBlur = 30;
+        drawPocketWatch(finalPlatform.x + finalPlatform.width / 2, finalPlatform.y - 20);
         ctx.restore();
 
-        if (Math.abs(gameState.miloPosition.x - (finalPlatform.x + 60)) < 60 &&
-            Math.abs(gameState.miloPosition.y - (finalPlatform.y - 10)) < 80) {
+        if (Math.abs(gameState.miloPosition.x - (finalPlatform.x + finalPlatform.width / 2)) < 60 &&
+            Math.abs(gameState.miloPosition.y - (finalPlatform.y - 20)) < 80) {
             ctx.save();
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.fillRect(320, 30, 360, 40);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             ctx.strokeStyle = '#FFD700';
             ctx.lineWidth = 2;
-            ctx.strokeRect(320, 30, 360, 40);
-            ctx.fillStyle = '#000';
+            ctx.roundRect(320, 30, 360, 40, 15);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#FFFFFF';
             ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('Press E to collect the ancient timepiece!', 500, 55);
@@ -223,7 +183,7 @@ function drawLevel1() {
                 playCollectSound();
                 gameState.watchParts++;
                 fadeOutIn(() => {
-                    startLevel2();
+                    startLevel2(); // Baris ini sekarang aktif
                 });
             }
         }
@@ -232,93 +192,153 @@ function drawLevel1() {
     drawHelpIndicators();
 }
 
-function drawPlatform(x, y, width, height, fillColor, strokeColor) {
-    const platformGradient = ctx.createLinearGradient(x, y, x, y + height);
-    platformGradient.addColorStop(0, fillColor);
-    platformGradient.addColorStop(1, strokeColor);
-    ctx.fillStyle = platformGradient;
-    ctx.fillRect(x, y, width, height);
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x, y, width, height);
-    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-    ctx.lineWidth = 1;
-    for (let i = x; i < x + width; i += 20) {
-        ctx.beginPath();
-        ctx.moveTo(i, y);
-        ctx.lineTo(i, y + height);
-        ctx.stroke();
-    }
-}
-
-function drawIncanDecorations() {
-    ctx.fillStyle = '#8B4513';
-    ctx.globalAlpha = 0.7;
-    ctx.fillRect(50, 450, 20, 100);
-    ctx.fillRect(900, 400, 25, 150);
-    ctx.fillRect(800, 300, 15, 50);
+// Fungsi pembantu untuk menggambar pegunungan
+function drawMountainRange(baseY, color, alpha) {
+    ctx.fillStyle = color;
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.moveTo(0, baseY);
+    ctx.lineTo(100, baseY - 150);
+    ctx.lineTo(250, baseY - 50);
+    ctx.lineTo(400, baseY - 200);
+    ctx.lineTo(550, baseY - 80);
+    ctx.lineTo(700, baseY - 180);
+    ctx.lineTo(850, baseY - 100);
+    ctx.lineTo(1000, baseY - 220);
+    ctx.lineTo(1000, 600);
+    ctx.lineTo(0, 600);
+    ctx.closePath();
+    ctx.fill();
     ctx.globalAlpha = 1.0;
 }
 
-function drawShapeOutline(x, y, shape) {
-    if (shape === 'triangle') {
+// Fungsi pembantu untuk menggambar platform batu
+function drawStonePlatform(x, y, width, height) {
+    // Gradien dasar untuk memberi kesan 3D
+    const gradient = ctx.createLinearGradient(x, y, x, y + height);
+    gradient.addColorStop(0, '#B0C4DE'); // Permukaan atas lebih terang
+    gradient.addColorStop(1, '#778899'); // Bagian bawah lebih gelap
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, y, width, height);
+
+    // Tambahkan tekstur batu
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    for (let i = 0; i < width / 5; i++) {
         ctx.beginPath();
-        ctx.moveTo(x, y - 15);
-        ctx.lineTo(x - 15, y + 15);
-        ctx.lineTo(x + 15, y + 15);
-        ctx.closePath();
-        ctx.stroke();
-    } else if (shape === 'circle') {
+        ctx.arc(x + Math.random() * width, y + Math.random() * height, Math.random() * 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Garis retakan untuk detail
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + 10, y + 5);
+    ctx.lineTo(x + width - 10, y + height - 5);
+    ctx.stroke();
+
+    // Border
+    ctx.strokeStyle = '#2F4F4F';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, width, height);
+}
+
+
+function drawIncanDecorations() {
+    // Pola geometris di latar belakang
+    ctx.globalAlpha = 0.1;
+    ctx.strokeStyle = '#FFD700';
+    for (let i = 0; i < 5; i++) {
+        let x = 100 + i * 200;
+        ctx.strokeRect(x, 150, 50, 50);
         ctx.beginPath();
-        ctx.arc(x, y, 15, 0, Math.PI * 2);
+        ctx.moveTo(x, 150);
+        ctx.lineTo(x + 50, 200);
+        ctx.moveTo(x + 50, 150);
+        ctx.lineTo(x, 200);
         ctx.stroke();
-    } else if (shape === 'square') {
-        ctx.strokeRect(x - 15, y - 15, 30, 30);
+    }
+    ctx.globalAlpha = 1.0;
+
+    // Vegetasi rumput di tanah
+    for (let i = 0; i < 100; i++) {
+        let x = Math.random() * 1000;
+        let y = 550 + Math.random() * 50;
+        ctx.fillStyle = `rgba(46, 139, 87, ${Math.random() * 0.5 + 0.3})`;
+        ctx.fillRect(x, y - 10, 2, 10);
     }
 }
 
+// Fungsi pembantu untuk menggambar outline artefak
+function drawShapeOutline(x, y, shape) {
+    ctx.beginPath();
+    if (shape === 'triangle') {
+        ctx.moveTo(x, y - 20);
+        ctx.lineTo(x - 20, y + 20);
+        ctx.lineTo(x + 20, y + 20);
+        ctx.closePath();
+    } else if (shape === 'circle') {
+        ctx.arc(x, y, 20, 0, Math.PI * 2);
+    } else if (shape === 'square') {
+        ctx.rect(x - 20, y - 20, 40, 40);
+    }
+    ctx.stroke();
+}
+
+// Fungsi pembantu untuk menggambar artefak batu
 function drawEnhancedShape(x, y, shape, isCarrying) {
     ctx.save();
     if (isCarrying) {
-        ctx.shadowColor = '#FFD700';
-        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#FFFF00';
+        ctx.shadowBlur = 20;
     }
-    let gradient;
+
+    let primaryColor, secondaryColor, tertiaryColor;
+
+    if (shape === 'triangle') { // Artefak Matahari
+        primaryColor = '#FFC300'; secondaryColor = '#DAA520'; tertiaryColor = '#FFD700';
+    } else if (shape === 'circle') { // Artefak Bulan
+        primaryColor = '#E0FFFF'; secondaryColor = '#B0C4DE'; tertiaryColor = '#FFFFFF';
+    } else { // Artefak Gunung
+        primaryColor = '#6B8E23'; secondaryColor = '#556B2F'; tertiaryColor = '#8FBC8F';
+    }
+
+    // Gambar dasar artefak
+    const gradient = ctx.createRadialGradient(x, y, 5, x, y, 22);
+    gradient.addColorStop(0, tertiaryColor);
+    gradient.addColorStop(0.5, primaryColor);
+    gradient.addColorStop(1, secondaryColor);
+    ctx.fillStyle = gradient;
+
+    ctx.beginPath();
     if (shape === 'triangle') {
-        gradient = ctx.createRadialGradient(x, y, 0, x, y, 20);
-        gradient.addColorStop(0, '#FF8E8E');
-        gradient.addColorStop(1, '#FF6B6B');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.moveTo(x, y - 15);
-        ctx.lineTo(x - 15, y + 15);
-        ctx.lineTo(x + 15, y + 15);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#FFB3B3';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        ctx.moveTo(x, y - 18); ctx.lineTo(x - 18, y + 18); ctx.lineTo(x + 18, y + 18); ctx.closePath();
     } else if (shape === 'circle') {
-        gradient = ctx.createRadialGradient(x, y, 0, x, y, 20);
-        gradient.addColorStop(0, '#6EEEE4');
-        gradient.addColorStop(1, '#4ECDC4');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x, y, 15, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#B3F5F1';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-    } else if (shape === 'square') {
-        gradient = ctx.createLinearGradient(x - 15, y - 15, x + 15, y + 15);
-        gradient.addColorStop(0, '#67C7F1');
-        gradient.addColorStop(1, '#45B7D1');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x - 15, y - 15, 30, 30);
-        ctx.strokeStyle = '#A3D7F1';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x - 15, y - 15, 30, 30);
+        ctx.arc(x, y, 18, 0, Math.PI * 2);
+    } else {
+        ctx.rect(x - 18, y - 18, 36, 36);
     }
+    ctx.fill();
+    ctx.strokeStyle = secondaryColor;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Tambahkan ukiran Inka
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if (shape === 'triangle') {
+        ctx.arc(x, y + 10, 8, 0, Math.PI, true);
+        ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 5, y - 5);
+    } else if (shape === 'circle') {
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.moveTo(x, y - 10); ctx.lineTo(x, y + 10);
+    } else {
+        ctx.moveTo(x - 10, y - 10); ctx.lineTo(x + 10, y - 10);
+        ctx.moveTo(x - 10, y); ctx.lineTo(x + 10, y);
+        ctx.moveTo(x - 10, y + 10); ctx.lineTo(x + 10, y + 10);
+    }
+    ctx.stroke();
     ctx.restore();
 }
 
@@ -335,8 +355,12 @@ function drawHelpIndicators() {
     if (objectiveText) {
         ctx.save();
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(10, 10, 400, 30);
-        ctx.fillStyle = '#FFD700';
+        ctx.strokeStyle = '#DAA520';
+        ctx.lineWidth = 2;
+        ctx.roundRect(10, 10, 400, 30, 10);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#FFFFFF';
         ctx.font = 'bold 14px Arial';
         ctx.fillText(objectiveText, 20, 30);
         ctx.restore();
@@ -347,10 +371,10 @@ function drawHelpIndicators() {
                 Math.abs(gameState.miloPosition.x - obj.x) < 50 &&
                 Math.abs(gameState.miloPosition.y - obj.y) < 50) {
                 ctx.save();
-                ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.9)';
                 ctx.font = 'bold 14px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText('Press E', obj.x, obj.y - 25);
+                ctx.fillText('Press E', obj.x, obj.y - 35);
                 ctx.restore();
             }
         });
@@ -359,20 +383,19 @@ function drawHelpIndicators() {
         if (Math.abs(gameState.miloPosition.x - obj.targetX) < 40 &&
             Math.abs(gameState.miloPosition.y - obj.targetY) < 40) {
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
             ctx.font = 'bold 14px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('Press E to Place', obj.targetX, obj.targetY - 25);
+            ctx.fillText('Press E to Place', obj.targetX, obj.targetY - 35);
             ctx.restore();
         }
     }
 }
 
-function updateMilo() {
-    // --- MODIFIKASI UNTUK KECEPATAN PERMAINAN ---
-    const moveSpeed = 2;    // Dikurangi dari 3
-    const jumpPower = -12;  // Dikurangi dari -15
-    const gravity = 0.5;    // Sedikit dikurangi untuk lompatan yang lebih "mengapung"
+function updateMilo_Level1() {
+    const moveSpeed = 2;
+    const jumpPower = -13;
+    const gravity = 0.5;
 
     if (!gameState.keys['e']) {
         gameState.interactionPressed = false;
@@ -401,7 +424,6 @@ function updateMilo() {
 
     let onPlatform = false;
 
-    // Ground platform
     if (gameState.miloPosition.y >= 550) {
         gameState.miloPosition.y = 550;
         gameState.miloVelocity.y = 0;
@@ -410,7 +432,6 @@ function updateMilo() {
         onPlatform = true;
     }
 
-    // Deteksi kolisi dengan platform hanya untuk level1
     if (gameState.currentScene === 'level1' && gameState.level1Platforms && Array.isArray(gameState.level1Platforms)) {
         gameState.level1Platforms.forEach(platform => {
             if (gameState.miloPosition.y >= platform.y && gameState.miloPosition.y <= platform.y + platform.height &&

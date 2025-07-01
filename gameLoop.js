@@ -16,8 +16,13 @@ function gameLoop() {
     if (isPaused) return;
 
     ctx.clearRect(0, 0, 1000, 600);
-
-    updateMilo();
+    if (gameState.currentScene === 'lobby') {
+        updateMilo_Lobby();
+    } else if (gameState.currentScene === 'level1') {
+        updateMilo_Level1();
+    } else if (gameState.currentScene === 'level2') {
+        updateMilo_Level2();
+    }
     updateUI();
 
     if (gameState.currentScene === 'lobby') {
