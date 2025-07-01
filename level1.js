@@ -48,13 +48,13 @@ function startLevel1() {
         width: range.width,
         height: range.height,
         fillColor: range === platformRanges[0] ? '#A0522D' :
-                   range === platformRanges[1] ? '#CD853F' :
-                   range === platformRanges[2] ? '#DEB887' :
-                   range === platformRanges[3] ? '#D2691E' : '#B8860B',
+            range === platformRanges[1] ? '#CD853F' :
+                range === platformRanges[2] ? '#DEB887' :
+                    range === platformRanges[3] ? '#D2691E' : '#B8860B',
         strokeColor: range === platformRanges[0] ? '#D2B48C' :
-                     range === platformRanges[1] ? '#DAA520' :
-                     range === platformRanges[2] ? '#F4A460' :
-                     range === platformRanges[3] ? '#F4A460' : '#FFD700'
+            range === platformRanges[1] ? '#DAA520' :
+                range === platformRanges[2] ? '#F4A460' :
+                    range === platformRanges[3] ? '#F4A460' : '#FFD700'
     }));
 
     // Randomisasi posisi target di platform (kecuali final platform)
@@ -362,11 +362,11 @@ function updateMilo() {
     const moveSpeed = 3;
     const jumpPower = -15;
     const gravity = 0.7;
-    
+
     if (!gameState.keys['e']) {
         gameState.interactionPressed = false;
     }
-    
+
     if (gameState.keys['a'] || gameState.keys['arrowleft']) {
         gameState.miloVelocity.x = -moveSpeed;
     } else if (gameState.keys['d'] || gameState.keys['arrowright']) {
@@ -399,8 +399,8 @@ function updateMilo() {
         onPlatform = true;
     }
 
-    // Deteksi kolisi dengan platform yang diacak, dengan pengecekan keberadaan
-    if (gameState.level1Platforms && Array.isArray(gameState.level1Platforms)) {
+    // Deteksi kolisi dengan platform hanya untuk level1
+    if (gameState.currentScene === 'level1' && gameState.level1Platforms && Array.isArray(gameState.level1Platforms)) {
         gameState.level1Platforms.forEach(platform => {
             if (gameState.miloPosition.y >= platform.y && gameState.miloPosition.y <= platform.y + platform.height &&
                 gameState.miloPosition.x >= platform.x && gameState.miloPosition.x <= platform.x + platform.width &&
@@ -426,8 +426,19 @@ function handleInteraction() {
         return;
     }
 
+    let objects = [];
+    if (gameState.currentScene === 'level1' && gameState.level1Objects && Array.isArray(gameState.level1Objects)) {
+        objects = gameState.level1Objects;
+    } else if (gameState.currentScene === 'level2' && gameState.level2Objects && Array.isArray(gameState.level2Objects)) {
+        objects = gameState.level2Objects;
+    } else if (gameState.currentScene === 'level3' && gameState.level3Objects && Array.isArray(gameState.level3Objects)) {
+        objects = gameState.level3Objects;
+    } else if (gameState.currentScene === 'level4' && gameState.level4Objects && Array.isArray(gameState.level4Objects)) {
+        objects = gameState.level4Objects;
+    }
+
     if (!gameState.draggedObject) {
-        gameState.level1Objects.forEach(obj => {
+        objects.forEach(obj => {
             if (!obj.placed && !obj.carrying &&
                 Math.abs(gameState.miloPosition.x - obj.x) < 50 &&
                 Math.abs(gameState.miloPosition.y - obj.y) < 50) {
@@ -435,7 +446,7 @@ function handleInteraction() {
                 gameState.draggedObject = obj;
                 gameState.interactionPressed = true;
                 playCollectSound();
-                console.log(`Picked up ${obj.shape}`);
+                console.log(`Picked up ${obj.shape || 'object'} in ${gameState.currentScene}`);
             }
         });
     } else {
@@ -449,7 +460,7 @@ function handleInteraction() {
             gameState.draggedObject = null;
             gameState.interactionPressed = true;
             playCollectSound();
-            console.log(`Placed ${obj.shape} at target`);
+            console.log(`Placed ${obj.shape || 'object'} at target in ${gameState.currentScene}`);
         }
     }
 }
