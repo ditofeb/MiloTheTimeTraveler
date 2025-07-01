@@ -224,5 +224,17 @@ function resumeGame() {
 }
 
 function showInstructions() {
-    alert("🎮 Petunjuk Permainan:\n\n- WASD: Bergerak\n- SPACE: Melompat\n- E: Interaksi\n- Mouse: Menggerakkan benda");
+    const modal = document.getElementById('instructionsModal');
+    const menu = document.getElementById('mainMenu');
+    modal.classList.remove('hidden');
+    menu.style.display = 'none';  // Sembunyikan Main Menu
 }
+
+function closeInstructions() {
+    const modal = document.getElementById('instructionsModal');
+    const menu = document.getElementById('mainMenu');
+    modal.classList.add('hidden');
+    menu.style.display = 'flex';  // Munculkan Main Menu lagi
+}
+
+

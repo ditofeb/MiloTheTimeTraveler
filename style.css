@@ -101,7 +101,7 @@ body {
 #mainMenu {
     position: fixed;
     inset: 0;
-    background: linear-gradient(#222, #444);
+    background: radial-gradient(circle at center, #222 0%, #111 80%);
     color: white;
     display: flex;
     flex-direction: column;
@@ -112,13 +112,22 @@ body {
     border-radius: 10px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
     transition: opacity 0.5s;
+    opacity: 0;
+    animation: fadeIn 1.5s ease forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 #mainMenu h1 {
-    font-size: 40px;
-    margin-bottom: 30px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    font-family: 'Cinzel', serif;
+    font-size: 50px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
+
 
 #mainMenu button {
     padding: 12px 25px;
@@ -130,10 +139,12 @@ body {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 #mainMenu button:hover {
     background-color: #45a049;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.5);
 }
 
 #pauseMenu {
@@ -187,3 +198,61 @@ body {
     z-index: 9997;
     transition: opacity 1s;
 }
+
+#instructionsModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+}
+
+.hidden {
+  display: none !important;
+}
+
+#instructionsModal .modal-content {
+  background: #222;
+  color: white;
+  padding: 30px;
+  border-radius: 8px;
+  text-align: left;
+  width: 300px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  animation: fadeIn 0.5s ease;
+}
+
+#instructionsModal h2 {
+  margin-top: 0;
+  font-family: 'Cinzel', serif;
+}
+
+#instructionsModal ul {
+    padding-left: 20px;
+    margin: 10px 0 20px 0;
+}
+
+#instructionsModal li {
+    margin-bottom: 8px;
+}
+
+#instructionsModal button {
+    padding: 8px 16px;
+    background: #4CAF50;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+}
+
+#instructionsModal button:hover {
+    background: #45a049;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+

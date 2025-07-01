@@ -6,11 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Milo: The Time Traveler</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 </head>
 
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        <!-- <button id="replayBtn" onclick="playSequence()" style="position:absolute; top:10px; right:10px; z-index:1000; padding:5px 10px;">Replay Sequence</button> -->
         <div id="ui">
             <div>Scene: <span id="currentScene">Lobby</span></div>
             <div>Pocket Watch Parts: <span id="watchParts">0/4</span></div>
@@ -34,6 +36,32 @@
         <button onclick="showInstructions()"
             style="padding: 10px 20px; font-size: 18px; margin: 10px;">Petunjuk</button>
     </div>
+
+    <!-- Instructions Modal -->
+    <div id="instructionsModal" class="hidden" style="
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 10000;">
+    <div class="modal-content" style="
+        background: #222; color: white;
+        padding: 30px; border-radius: 10px;
+        text-align: left; max-width: 400px;">
+        <h2>📜 Petunjuk Permainan</h2>
+        <ul>
+        <li>WASD: Bergerak</li>
+        <li>SPACE: Melompat</li>
+        <li>E: Interaksi</li>
+        <li>Mouse: Menggerakkan benda</li>
+        </ul>
+        <button onclick="closeInstructions()" style="
+        padding: 8px 16px; margin-top: 15px;
+        background: #4CAF50; border: none; color: white; border-radius: 4px; cursor: pointer;">
+        Tutup
+        </button>
+    </div>
+    </div>
+
 
     <!-- Pause Menu -->
     <div id="pauseMenu"
