@@ -207,14 +207,14 @@ function drawLobby() {
     ctx.stroke();
 
     // The mysterious pocket watch (enhanced)
-    ctx.fillStyle = '#4A4A4A';
+    ctx.fillStyle = '#4A4A4A'; // darker shadow base
     ctx.beginPath();
-    ctx.arc(150, 328, 25, 0, Math.PI * 2);
+    ctx.arc(155, 385, 25, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = '#FFD700';
     ctx.beginPath();
-    ctx.arc(150, 328, 22, 0, Math.PI * 2);
+    ctx.arc(150, 380, 22, 0, Math.PI * 2);
     ctx.fill();
 
     // Watch details
@@ -225,17 +225,17 @@ function drawLobby() {
     // Watch face
     ctx.fillStyle = '#FFFAF0';
     ctx.beginPath();
-    ctx.arc(150, 328, 18, 0, Math.PI * 2);
+    ctx.arc(150, 380, 18, 0, Math.PI * 2);
     ctx.fill();
 
     // Clock hands (broken/twisted)
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(150, 328);
-    ctx.lineTo(145, 318);
-    ctx.moveTo(150, 328);
-    ctx.lineTo(160, 323);
+    ctx.moveTo(150, 380);
+    ctx.lineTo(145, 370);
+    ctx.moveTo(150, 380);
+    ctx.lineTo(160, 375);
     ctx.stroke();
 
     // Mystical glow effect around the watch
@@ -244,12 +244,12 @@ function drawLobby() {
     ctx.strokeStyle = '#FFD700';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.arc(150, 328, 30, 0, Math.PI * 2);
+    ctx.arc(150, 380, 30, 0, Math.PI * 2);
     ctx.stroke();
     ctx.shadowBlur = 0;
 
     // Interaction prompt
-    if (Math.abs(gameState.miloPosition.x - 150) < 50 && Math.abs(gameState.miloPosition.y - 328) < 50) {
+    if (Math.abs(gameState.miloPosition.x - 150) < 50 && Math.abs(gameState.miloPosition.y - 380) < 50) {
         // Prompt background
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.fillRect(250, 30, 300, 40);
@@ -267,6 +267,58 @@ function drawLobby() {
             });
         }
     }
+
+    // Chair near workbench (stepping stone for cat)
+    ctx.fillStyle = '#8B4513';
+    ctx.fillRect(280, 420, 40, 80); // chair back
+    ctx.fillRect(280, 480, 50, 20); // chair seat
+
+    // Chair legs
+    ctx.fillStyle = '#654321';
+    ctx.fillRect(285, 500, 6, 50);
+    ctx.fillRect(315, 500, 6, 50);
+    ctx.fillRect(285, 420, 6, 60);
+    ctx.fillRect(315, 420, 6, 60);
+
+    // Small wooden crate (another stepping option)
+    ctx.fillStyle = '#DEB887';
+    ctx.fillRect(320, 480, 35, 30);
+    ctx.strokeStyle = '#8B7355';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(320, 480, 35, 30);
+
+    // Crate wooden slats
+    ctx.beginPath();
+    ctx.moveTo(320, 490);
+    ctx.lineTo(355, 490);
+    ctx.moveTo(320, 500);
+    ctx.lineTo(355, 500);
+    ctx.stroke();
+
+    // Stack of books on floor (additional step)
+    ctx.fillStyle = '#8B0000';
+    ctx.fillRect(250, 520, 60, 8);
+    ctx.fillStyle = '#006400';
+    ctx.fillRect(252, 512, 56, 8);
+    ctx.fillStyle = '#4B0082';
+    ctx.fillRect(254, 504, 52, 8);
+
+    // Small bucket turned upside down (makeshift step)
+    ctx.fillStyle = '#696969';
+    ctx.beginPath();
+    ctx.arc(200, 530, 25, 0, Math.PI);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#2F4F4F';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Bucket handle
+    ctx.strokeStyle = '#2F4F4F';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(200, 525, 15, Math.PI, 0);
+    ctx.stroke();
 
     // Dust particles in the light
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';

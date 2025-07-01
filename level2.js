@@ -1,4 +1,12 @@
 function startLevel2() {
+    // Reset state level1
+    if (gameState.level1Platforms) {
+        delete gameState.level1Platforms;
+    }
+    if (gameState.level1Objects) {
+        delete gameState.level1Objects;
+    }
+
     gameState.currentScene = 'level2';
     playMusic('level2');
     gameState.timeLimit = 45;

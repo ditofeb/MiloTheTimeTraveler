@@ -1,4 +1,12 @@
 function startLevel3() {
+    // Reset state level1
+    if (gameState.level1Platforms) {
+        delete gameState.level1Platforms;
+    }
+    if (gameState.level1Objects) {
+        delete gameState.level1Objects;
+    }
+
     gameState.currentScene = 'level3';
     playMusic('level3');
     gameState.timeLimit = 30;
