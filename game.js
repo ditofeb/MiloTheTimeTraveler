@@ -115,34 +115,6 @@ function drawMilo() {
     ctx.stroke();
 }
 
-function updateMilo() {
-    if (gameState.keys['a']) {
-        gameState.miloVelocity.x = -3;
-    } else if (gameState.keys['d']) {
-        gameState.miloVelocity.x = 3;
-    } else {
-        gameState.miloVelocity.x *= 0.85;
-    }
-
-    if ((gameState.keys[' '] || gameState.keys['w']) && gameState.onGround) {
-        gameState.miloVelocity.y = -20;
-        gameState.onGround = false;
-    }
-
-    gameState.miloVelocity.y += 0.8;
-    gameState.miloPosition.x += gameState.miloVelocity.x;
-    gameState.miloPosition.y += gameState.miloVelocity.y;
-
-    if (gameState.miloPosition.x < 20) gameState.miloPosition.x = 20;
-    if (gameState.miloPosition.x > 980) gameState.miloPosition.x = 980;
-
-    if (gameState.miloPosition.y > 550) {
-        gameState.miloPosition.y = 550;
-        gameState.miloVelocity.y = 0;
-        gameState.onGround = true;
-    }
-}
-
 function playCollectSound() {
     const audio = document.getElementById('collectSound');
     if (audio) {
