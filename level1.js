@@ -48,16 +48,38 @@ function startLevel1() {
         width: range.width,
         height: range.height,
         fillColor: range === platformRanges[0] ? '#A0522D' :
-                   range === platformRanges[1] ? '#CD853F' :
-                   range === platformRanges[2] ? '#DEB887' :
-                   range === platformRanges[3] ? '#D2691E' : '#B8860B',
+                     range === platformRanges[1] ? '#CD853F' :
+                     range === platformRanges[2] ? '#DEB887' :
+                     range === platformRanges[3] ? '#D2691E' : '#B8860B',
         strokeColor: range === platformRanges[0] ? '#D2B48C' :
-                     range === platformRanges[1] ? '#DAA520' :
-                     range === platformRanges[2] ? '#F4A460' :
-                     range === platformRanges[3] ? '#F4A460' : '#FFD700'
+                       range === platformRanges[1] ? '#DAA520' :
+                       range === platformRanges[2] ? '#F4A460' :
+                       range === platformRanges[3] ? '#F4A460' : '#FFD700'
     }));
 
-    // Randomisasi posisi target di platform (kecuali final platform)
+    // --- MODIFIKASI UNTUK LOKASI SPAWN ---
+
+    // Buat daftar semua permukaan spawn yang memungkinkan (platform dan tanah)
+    const allSpawnSurfaces = [
+        // Tanah
+        { x: 0, y: 540, width: 1000 },
+        // Semua platform
+        ...gameState.level1Platforms
+    ];
+
+    // Acak permukaan spawn untuk memastikan penugasan acak
+    for (let i = allSpawnSurfaces.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allSpawnSurfaces[i], allSpawnSurfaces[j]] = [allSpawnSurfaces[j], allSpawnSurfaces[i]];
+    }
+
+    // Tetapkan lokasi awal untuk objek di permukaan ini
+    const objectStartLocations = allSpawnSurfaces.slice(0, 3).map(surface => ({
+        x: getRandomInt(surface.x, surface.x + surface.width - 30),
+        y: surface.y - 15 // Tempatkan objek di atas permukaan
+    }));
+
+    // Randomisasi posisi target di platform (kecuali platform final)
     const possibleTargetLocations = gameState.level1Platforms.slice(0, 3).map(platform => ({
         x: getRandomInt(platform.x, platform.x + platform.width - 30),
         y: platform.y - 15
@@ -67,19 +89,6 @@ function startLevel1() {
     for (let i = possibleTargetLocations.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [possibleTargetLocations[i], possibleTargetLocations[j]] = [possibleTargetLocations[j], possibleTargetLocations[i]];
-    }
-
-    // Randomisasi posisi awal objek di ground atau platform yang dapat dijangkau
-    const objectStartLocations = [
-        { x: getRandomInt(50, 950), y: 540 },
-        { x: getRandomInt(gameState.level1Platforms[0].x, gameState.level1Platforms[0].x + gameState.level1Platforms[0].width - 30), y: gameState.level1Platforms[0].y - 15 },
-        { x: getRandomInt(gameState.level1Platforms[1].x, gameState.level1Platforms[1].x + gameState.level1Platforms[1].width - 30), y: gameState.level1Platforms[1].y - 15 }
-    ];
-
-    // Acak object start locations
-    for (let i = objectStartLocations.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [objectStartLocations[i], objectStartLocations[j]] = [objectStartLocations[j], objectStartLocations[i]];
     }
 
     // Inisialisasi objek dengan posisi dan target yang diacak
@@ -359,14 +368,15 @@ function drawHelpIndicators() {
 }
 
 function updateMilo() {
-    const moveSpeed = 3;
-    const jumpPower = -15;
-    const gravity = 0.7;
-    
+    // --- MODIFIKASI UNTUK KECEPATAN PERMAINAN ---
+    const moveSpeed = 2;    // Dikurangi dari 3
+    const jumpPower = -12;  // Dikurangi dari -15
+    const gravity = 0.5;    // Sedikit dikurangi untuk lompatan yang lebih "mengapung"
+
     if (!gameState.keys['e']) {
         gameState.interactionPressed = false;
     }
-    
+
     if (gameState.keys['a'] || gameState.keys['arrowleft']) {
         gameState.miloVelocity.x = -moveSpeed;
     } else if (gameState.keys['d'] || gameState.keys['arrowright']) {
