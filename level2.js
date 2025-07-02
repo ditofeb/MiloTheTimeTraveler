@@ -82,14 +82,14 @@ function startLevel2() {
     // Simon Says variables
     gameState.level2Sequence = [];
     gameState.level2PlayerSequence = [];
-    gameState.currentSequenceStep = 0; // Untuk tracking langkah saat ini
-    gameState.sequenceLength = 1; // Mulai dengan 1 lampu
+    gameState.currentSequenceStep = 0;
+    gameState.sequenceLength = 1; 
     gameState.showingSequence = false;
     gameState.activeStone = null;
     gameState.puzzleFailed = false;
     gameState.puzzleCompleted = false;
     gameState.canInteract = false;
-    
+
     gameState.fallingRocks = [{ x: 450, y: -50, speed: 0, active: false }];
     gameState.fireParticles = [];
 
@@ -103,7 +103,6 @@ function startLevel2() {
 
 // === SIMON SAYS LOGIC ===
 function startLevel2Sequence() {
-    // Generate sequence berdasarkan panjang saat ini
     gameState.level2Sequence = [];
     for (let i = 0; i < gameState.sequenceLength; i++) {
         gameState.level2Sequence.push(Math.floor(Math.random() * 4));
@@ -149,15 +148,14 @@ function playCollectSound() {
     audio.play();
 }
 
-// Fungsi untuk mengecek apakah Milo dekat dengan button tertentu
 function getNearbyStone() {
     const groundButtons = [
-        { x: 300, y: 530, index: 0 }, // Sesuaikan y position agar pas dengan gem
+        { x: 300, y: 530, index: 0 },
         { x: 400, y: 530, index: 1 },
         { x: 500, y: 530, index: 2 },
         { x: 600, y: 530, index: 3 }
     ];
-    
+
     for (let button of groundButtons) {
         if (Math.abs(gameState.miloPosition.x - button.x) < 40 &&
             Math.abs(gameState.miloPosition.y - button.y) < 40) {
@@ -169,49 +167,38 @@ function getNearbyStone() {
 
 function handleStoneInteraction() {
     if (!gameState.canInteract || gameState.showingSequence) return;
-    
+
     const nearbyStone = getNearbyStone();
     if (nearbyStone === -1) return;
     
-    // Tambahkan input pemain
     gameState.level2PlayerSequence.push(nearbyStone);
     playStoneSound(nearbyStone);
-    
-    // Flash stone untuk feedback visual
-    gameState.activeStone = nearbyStone;
-    setTimeout(() => { gameState.activeStone = null; }, 300);
-    
+
     checkLevel2Sequence();
 }
 
 function checkLevel2Sequence() {
     const currentStep = gameState.level2PlayerSequence.length - 1;
-    
-    // Cek apakah input saat ini benar
+
     if (gameState.level2PlayerSequence[currentStep] !== gameState.level2Sequence[currentStep]) {
-        // Salah - reset sequence
         gameState.puzzleFailed = true;
         const buzz = new Audio('music/buzz.mp3');
         buzz.play();
         setTimeout(() => {
             gameState.puzzleFailed = false;
-            startLevel2Sequence(); // Ulangi sequence yang sama
+            startLevel2Sequence(); 
         }, 1500);
         return;
     }
-    
-    // Cek apakah sequence lengkap sudah benar
+
     if (gameState.level2PlayerSequence.length === gameState.level2Sequence.length) {
-        // Sequence benar, lanjut ke level berikutnya
         gameState.sequenceLength++;
-        
+
         if (gameState.sequenceLength > 4) {
-            // Puzzle selesai!
             gameState.puzzleCompleted = true;
             gameState.canInteract = false;
             playCollectSound();
         } else {
-            // Lanjut ke sequence yang lebih panjang
             setTimeout(() => {
                 startLevel2Sequence();
             }, 1000);
@@ -224,21 +211,18 @@ function updateMilo_Level2() {
     const moveSpeed = 2, jumpPower = -13, gravity = 0.5;
     const miloWidth = 30, miloHeight = 55;
 
-    // Handle E key press for interaksi
     if (gameState.keys['e'] && !gameState.interactionPressed) {
         gameState.interactionPressed = true;
 
         if (gameState.puzzleCompleted) {
-            const watchX = 700; // Posisi X jam di atas altar
-            const watchY = 480; // Posisi Y jam di atas altar
-            // Cek jika Milo dekat jam untuk mengambilnya
+            const watchX = 700; 
+            const watchY = 480; 
             if (Math.abs(gameState.miloPosition.x - watchX) < 50 && Math.abs(gameState.miloPosition.y - (watchY + 20)) < 50) {
                 playCollectSound();
                 gameState.watchParts++;
-                fadeOutIn(() => completeGame()); // Transisi ke layar ending
+                fadeOutIn(() => completeGame()); 
             }
         } else {
-            // Jika puzzle belum selesai, proses interaksi batu
             handleStoneInteraction();
         }
     }
@@ -246,15 +230,13 @@ function updateMilo_Level2() {
         gameState.interactionPressed = false;
     }
 
-
-    // Movement
     if (gameState.keys['a'] || gameState.keys['arrowleft']) gameState.miloVelocity.x = -moveSpeed;
     else if (gameState.keys['d'] || gameState.keys['arrowright']) gameState.miloVelocity.x = moveSpeed;
     else gameState.miloVelocity.x *= 0.85;
 
     if ((gameState.keys[' '] || gameState.keys['w']) && gameState.canJump) {
         gameState.miloVelocity.y = jumpPower;
-        gameState.canJump = false; 
+        gameState.canJump = false;
         gameState.onGround = false;
     }
 
@@ -279,8 +261,8 @@ function updateMilo_Level2() {
             if (prevY <= highestPlatform.surfaceY) {
                 gameState.miloPosition.y = highestPlatform.surfaceY;
                 gameState.miloVelocity.y = 0;
-                gameState.onGround = true; 
-                gameState.canJump = true; 
+                gameState.onGround = true;
+                gameState.canJump = true;
                 onSurface = true;
             }
         }
@@ -288,12 +270,11 @@ function updateMilo_Level2() {
     if (!onSurface && gameState.miloPosition.y >= 550) {
         gameState.miloPosition.y = 550;
         gameState.miloVelocity.y = 0;
-        gameState.onGround = true; 
+        gameState.onGround = true;
         gameState.canJump = true;
     }
     if (!onSurface) gameState.onGround = false;
 
-    // === Update Falling Rock Trap ===
     gameState.fallingRocks.forEach(rock => {
         if (!rock.active && Math.abs(gameState.miloPosition.x - rock.x) < 50) {
             rock.active = true;
@@ -305,14 +286,13 @@ function updateMilo_Level2() {
                 Math.abs(rock.y - gameState.miloPosition.y) < 20) {
                 console.log("Hit by rock!");
                 gameState.miloPosition = { x: 100, y: 500 };
-                rock.y = -50; 
-                rock.speed = 0; 
+                rock.y = -50;
+                rock.speed = 0;
                 rock.active = false;
             }
         }
     });
 
-    // === Fire particles ===
     const torchPositions = [{ x: 220, y: 290 }, { x: 630, y: 490 }];
     torchPositions.forEach(pos => {
         gameState.fireParticles.push({
@@ -331,10 +311,10 @@ function updateMilo_Level2() {
     gameState.fireParticles = gameState.fireParticles.filter(p => p.life > 0);
 }
 
-// === HELPER FUNCTION TO DRAW GEMSTONE ===
-function drawGemstone(ctx, x, y, size, color, isGlowing) {
+
+// === HELPER FUNCTION TO DRAW GEMSTONE (ENHANCED SOLID COLORS) ===
+function drawGemstone(ctx, x, y, size, color, isGlowing, isLuminous) {
     const hexRadius = size / 2;
-    // Mendefinisikan titik-titik poligon untuk membuat bentuk permata
     const points = [];
     for (let i = 0; i < 6; i++) {
         points.push({
@@ -343,100 +323,132 @@ function drawGemstone(ctx, x, y, size, color, isGlowing) {
         });
     }
 
-    // Efek cahaya saat aktif
     if (isGlowing) {
         ctx.shadowColor = color;
-        ctx.shadowBlur = 40;
+        ctx.shadowBlur = 80;
+        
+        ctx.fillStyle = color + 'BB'; 
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.9, 0, Math.PI * 2);
+        ctx.fill();
     } else {
         ctx.shadowBlur = 0;
     }
 
-    // Mengurai warna dasar
     const r = parseInt(color.slice(1, 3), 16);
     const g = parseInt(color.slice(3, 5), 16);
     const b = parseInt(color.slice(5, 7), 16);
 
-    // Menggambar sisi-sisi (facets) dengan bayangan berbeda untuk efek 3D
-    // Facet 1 (Paling terang)
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(points[0].x, points[0].y);
-    ctx.lineTo(points[1].x, points[1].y);
-    ctx.closePath();
-    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 1)`;
-    ctx.fill();
+    if (isLuminous) {
+        const lighten = (r, g, b, factor) => `rgba(${Math.min(255,r+(255-r)*factor)}, ${Math.min(255,g+(255-g)*factor)}, ${Math.min(255,b+(255-b)*factor)}, 1)`;
 
-    // Facet 2
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(points[1].x, points[1].y);
-    ctx.lineTo(points[2].x, points[2].y);
-    ctx.closePath();
-    ctx.fillStyle = `rgba(${r * 0.9}, ${g * 0.9}, ${b * 0.9}, 1)`;
-    ctx.fill();
+        if (isGlowing) {
+            ctx.fillStyle = lighten(r, g, b, 0.9); 
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[0].x, points[0].y); ctx.lineTo(points[1].x, points[1].y); ctx.fill();
+            
+            ctx.fillStyle = lighten(r, g, b, 0.7); 
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[1].x, points[1].y); ctx.lineTo(points[2].x, points[2].y); ctx.fill();
+            
+            ctx.fillStyle = lighten(r, g, b, 0.5); 
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[2].x, points[2].y); ctx.lineTo(points[3].x, points[3].y); ctx.fill();
+            
+            ctx.fillStyle = lighten(r, g, b, 0.6); 
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[3].x, points[3].y); ctx.lineTo(points[4].x, points[4].y); ctx.fill();
+            
+            ctx.fillStyle = lighten(r, g, b, 0.8); 
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[4].x, points[4].y); ctx.lineTo(points[5].x, points[5].y); ctx.fill();
+            
+            ctx.fillStyle = lighten(r, g, b, 0.4);
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[5].x, points[5].y); ctx.lineTo(points[0].x, points[0].y); ctx.fill();
 
-    // Facet 3
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(points[2].x, points[2].y);
-    ctx.lineTo(points[3].x, points[3].y);
-    ctx.closePath();
-    ctx.fillStyle = `rgba(${r * 0.7}, ${g * 0.7}, ${b * 0.7}, 1)`;
-    ctx.fill();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath(); ctx.arc(x, y, size * 0.15, 0, Math.PI * 2); ctx.fill();
+        } else {
+            ctx.fillStyle = lighten(r, g, b, 0.4);
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[0].x, points[0].y); ctx.lineTo(points[1].x, points[1].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[1].x, points[1].y); ctx.lineTo(points[2].x, points[2].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${r * 0.8}, ${g * 0.8}, ${b * 0.8}, 0.8)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[2].x, points[2].y); ctx.lineTo(points[3].x, points[3].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${r * 0.9}, ${g * 0.9}, ${b * 0.9}, 0.8)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[3].x, points[3].y); ctx.lineTo(points[4].x, points[4].y); ctx.fill();
+            
+            ctx.fillStyle = lighten(r, g, b, 0.2);
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[4].x, points[4].y); ctx.lineTo(points[5].x, points[5].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${r * 0.85}, ${g * 0.85}, ${b * 0.85}, 0.8)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[5].x, points[5].y); ctx.lineTo(points[0].x, points[0].y); ctx.fill();
 
-    // Facet lainnya...
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(points[3].x, points[3].y);
-    ctx.lineTo(points[4].x, points[4].y);
-    ctx.closePath();
-    ctx.fillStyle = `rgba(${r * 0.8}, ${g * 0.8}, ${b * 0.8}, 1)`;
-    ctx.fill();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath(); ctx.arc(x, y, size * 0.08, 0, Math.PI * 2); ctx.fill();
+        }
 
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(points[4].x, points[4].y);
-    ctx.lineTo(points[5].x, points[5].y);
-    ctx.closePath();
-    ctx.fillStyle = `rgba(${r * 0.95}, ${g * 0.95}, ${b * 0.95}, 1)`;
-    ctx.fill();
+    } else {
+        if (isGlowing) { 
+            ctx.fillStyle = `rgba(${Math.min(255, r + 80)}, ${Math.min(255, g + 80)}, ${Math.min(255, b + 80)}, 1)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[0].x, points[0].y); ctx.lineTo(points[1].x, points[1].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${Math.min(255, r + 50)}, ${Math.min(255, g + 50)}, ${Math.min(255, b + 50)}, 1)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[1].x, points[1].y); ctx.lineTo(points[2].x, points[2].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 1)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[2].x, points[2].y); ctx.lineTo(points[3].x, points[3].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${Math.min(255, r + 30)}, ${Math.min(255, g + 30)}, ${Math.min(255, b + 30)}, 1)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[3].x, points[3].y); ctx.lineTo(points[4].x, points[4].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${Math.min(255, r + 60)}, ${Math.min(255, g + 60)}, ${Math.min(255, b + 60)}, 1)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[4].x, points[4].y); ctx.lineTo(points[5].x, points[5].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${Math.min(255, r + 40)}, ${Math.min(255, g + 40)}, ${Math.min(255, b + 40)}, 1)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[5].x, points[5].y); ctx.lineTo(points[0].x, points[0].y); ctx.fill();
 
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(points[5].x, points[5].y);
-    ctx.lineTo(points[0].x, points[0].y);
-    ctx.closePath();
-    ctx.fillStyle = `rgba(${r * 0.85}, ${g * 0.85}, ${b * 0.85}, 1)`;
-    ctx.fill();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.beginPath(); ctx.arc(x, y, size * 0.12, 0, Math.PI * 2); ctx.fill();
+        } else {
+            ctx.fillStyle = `rgba(${r * 0.9 + 25}, ${g * 0.9 + 25}, ${b * 0.9 + 25}, 1)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[0].x, points[0].y); ctx.lineTo(points[1].x, points[1].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 1)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[1].x, points[1].y); ctx.lineTo(points[2].x, points[2].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${r * 0.7}, ${g * 0.7}, ${b * 0.7}, 1)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[2].x, points[2].y); ctx.lineTo(points[3].x, points[3].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${r * 0.8}, ${g * 0.8}, ${b * 0.8}, 1)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[3].x, points[3].y); ctx.lineTo(points[4].x, points[4].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${r * 0.95}, ${g * 0.95}, ${b * 0.95}, 1)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[4].x, points[4].y); ctx.lineTo(points[5].x, points[5].y); ctx.fill();
+            
+            ctx.fillStyle = `rgba(${r * 0.85}, ${g * 0.85}, ${b * 0.85}, 1)`;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(points[5].x, points[5].y); ctx.lineTo(points[0].x, points[0].y); ctx.fill();
+        }
+    }
 
-    // Reset shadow setelah menggambar
     ctx.shadowBlur = 0;
 }
 
-
 function drawLevel2() {
-    // === Background gradient pyramid ===
     const gradient = ctx.createLinearGradient(0, 0, 0, 600);
-    gradient.addColorStop(0, '#D2B48C'); // light sand
-    gradient.addColorStop(1, '#8B4513'); // dark sand
+    gradient.addColorStop(0, '#D2B48C'); 
+    gradient.addColorStop(1, '#8B4513'); 
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 1000, 600);
 
-    // === Silhouette pillars/statues ===
     ctx.fillStyle = 'rgba(80, 50, 20, 0.2)';
     ctx.fillRect(100, 100, 60, 400);
     ctx.fillRect(800, 50, 40, 500);
 
-    // === Ground ===
-    ctx.fillStyle = '#5C4033'; // dark stone
+    ctx.fillStyle = '#5C4033'; 
     ctx.fillRect(0, 550, 1000, 50);
 
-    // === Platform blocks with stone pattern ===
     Object.entries(level2Objects).forEach(([key, obj]) => {
-        // Base brick
-        ctx.fillStyle = '#A0522D'; // brown brick
+        ctx.fillStyle = '#A0522D'; 
         ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
-        // Block line pattern
         ctx.strokeStyle = '#8B4513';
         ctx.lineWidth = 2;
         for (let x = obj.x; x < obj.x + obj.width; x += 20) {
@@ -453,15 +465,12 @@ function drawLevel2() {
         }
     });
 
-    // === Animated torches ===
     const torches = [{ x: 220, y: 290 }, { x: 630, y: 490 }];
     torches.forEach(pos => {
-        // Glow light
         ctx.fillStyle = 'rgba(255, 140, 0, 0.3)';
         ctx.beginPath();
         ctx.arc(pos.x, pos.y - 20, 25 + Math.sin(Date.now() / 100) * 3, 0, Math.PI * 2);
         ctx.fill();
-        // Fire
         ctx.fillStyle = '#FFA500';
         ctx.beginPath();
         ctx.moveTo(pos.x, pos.y - 20);
@@ -471,7 +480,6 @@ function drawLevel2() {
         ctx.fill();
     });
 
-    // === Fire particles ===
     gameState.fireParticles.forEach(p => {
         ctx.fillStyle = `rgba(255,140,0,${p.life})`;
         ctx.beginPath();
@@ -479,7 +487,6 @@ function drawLevel2() {
         ctx.fill();
     });
 
-    // === FLOATING SEQUENCE GEMS (New Design) ===
     const floatingGems = [
         { x: 300, y: 200, color: '#FF6B6B' },
         { x: 400, y: 200, color: '#4ECDC4' },
@@ -490,20 +497,12 @@ function drawLevel2() {
     floatingGems.forEach((gem, index) => {
         const floating = Math.sin(Date.now() / 1000 + index) * 5;
         const gemY = gem.y + floating;
-        
-        drawGemstone(ctx, gem.x, gemY, 40, gem.color, gameState.activeStone === index);
-        
-        // Light beam
-        ctx.strokeStyle = `${gem.color}40`; // transparent color
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(gem.x, gemY + 20);
-        ctx.lineTo(gem.x, 500);
-        ctx.stroke();
+        const isActive = gameState.activeStone === index;
+
+        // Draw gemstone with parameter isLuminous = true for floating gems
+        drawGemstone(ctx, gem.x, gemY, 40, gem.color, isActive, true);
     });
 
-
-    // === GROUND BUTTONS (New Gemstone Design) ===
     const groundButtons = [
         { x: 300, y: 530, color: '#FF6B6B' },
         { x: 400, y: 530, color: '#4ECDC4' },
@@ -515,28 +514,26 @@ function drawLevel2() {
         const isNearby = getNearbyStone() === index;
         const gemSize = 50;
         const pressDepth = isNearby ? 3 : 0;
-        
-        // Socket (lubang di lantai)
-        ctx.fillStyle = '#302820';
-        ctx.beginPath();
-        ctx.arc(button.x, button.y, gemSize / 2 + 3, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Gambar gemstone sebagai tombol
-        const gemY = button.y + pressDepth;
-        drawGemstone(ctx, button.x, gemY, gemSize, button.color, false);
 
-        // Feedback visual saat didekati
+        ctx.fillStyle = '#1A1A1A'; 
+        ctx.beginPath();
+        ctx.arc(button.x, button.y, gemSize / 2 + 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw gemstone as button with isLuminous = false and isGlowing = false
+        // The glow effect is now handled separately below
+        const gemY = button.y + pressDepth;
+        drawGemstone(ctx, button.x, gemY, gemSize, button.color, false, false);
+
+        // Visual feedback for proximity, independent of the gem's own glow state
         if (isNearby) {
-            ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
+            ctx.fillStyle = 'rgba(255, 255, 0, 0.4)'; 
             ctx.beginPath();
-            ctx.arc(button.x, button.y, gemSize / 2 + 5, 0, Math.PI * 2);
+            ctx.arc(button.x, button.y, gemSize / 2 + 8, 0, Math.PI * 2);
             ctx.fill();
         }
     });
 
-
-    // === Show interaction prompt ===
     const nearbyButton = getNearbyStone();
     if (nearbyButton !== -1 && gameState.canInteract && !gameState.showingSequence) {
         const buttonX = [300, 400, 500, 600][nearbyButton];
@@ -544,8 +541,7 @@ function drawLevel2() {
         ctx.font = '14px Arial';
         ctx.textAlign = 'center';
         ctx.fillText('Press E to Activate Gem', buttonX, 485);
-        
-        // Floating indicator
+
         const bounce = Math.sin(Date.now() / 200) * 5;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
         ctx.font = 'bold 20px Arial';
@@ -555,13 +551,11 @@ function drawLevel2() {
         ctx.shadowBlur = 0;
     }
 
-    // === Milo shadow ===
     ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
     ctx.beginPath();
     ctx.ellipse(gameState.miloPosition.x, gameState.miloPosition.y + 10, 15, 5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // === Fine dust ===
     for (let i = 0; i < 30; i++) {
         const x = (i * 35 + Date.now() / 20) % 1000;
         const y = 100 + (i * 15) % 300;
@@ -569,24 +563,22 @@ function drawLevel2() {
         ctx.fillRect(x, y, 2, 2);
     }
 
-    // === Progress panel ===
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(15, 10, 250, 90);
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '14px Arial';
     ctx.textAlign = 'left';
-    
+
     if (gameState.showingSequence) {
         ctx.fillText(`Watch the sequence...`, 25, 30);
     } else if (gameState.canInteract) {
         ctx.fillText(`Walk to a gem and press E`, 25, 30);
     }
-    
+
     ctx.fillText(`Sequence length: ${gameState.sequenceLength}`, 25, 50);
     ctx.fillText(`Progress: ${gameState.level2PlayerSequence.length} / ${gameState.level2Sequence.length}`, 25, 70);
     ctx.fillText(`Completed rounds: ${gameState.sequenceLength - 1}/4`, 25, 90);
 
-    // === Puzzle failed overlay ===
     if (gameState.puzzleFailed) {
         ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
         ctx.fillRect(0, 0, 1000, 600);
@@ -596,12 +588,10 @@ function drawLevel2() {
         ctx.fillText('Wrong sequence! Try again...', 500, 300);
     }
 
-    // === Pocket Watch when puzzle completed ===
     if (gameState.puzzleCompleted) {
-        const watchX = 700; // Posisi X jam di atas altar
-        const watchY = 480; // Posisi Y jam di atas altar
+        const watchX = 700; 
+        const watchY = 480; 
         drawPocketWatch(watchX, watchY);
-        // Tampilkan prompt interaksi jika Milo dekat
         if (Math.abs(gameState.miloPosition.x - watchX) < 50 && Math.abs(gameState.miloPosition.y - (watchY + 20)) < 50) {
             ctx.fillStyle = '#FFF';
             ctx.font = '14px Arial';
@@ -610,8 +600,6 @@ function drawLevel2() {
         }
     }
 
-
-    // === Falling rock trap ===
     ctx.fillStyle = '#808080';
     gameState.fallingRocks.forEach(rock => {
         ctx.beginPath();
@@ -619,7 +607,6 @@ function drawLevel2() {
         ctx.fill();
     });
 
-    // === Lighting vignette ===
     const radial = ctx.createRadialGradient(500, 300, 200, 500, 300, 500);
     radial.addColorStop(0, 'rgba(0,0,0,0)');
     radial.addColorStop(1, 'rgba(0,0,0,0.4)');
