@@ -577,7 +577,7 @@ function drawLevel2() {
 
     ctx.fillText(`Sequence length: ${gameState.sequenceLength}`, 25, 50);
     ctx.fillText(`Progress: ${gameState.level2PlayerSequence.length} / ${gameState.level2Sequence.length}`, 25, 70);
-    ctx.fillText(`Completed rounds: ${gameState.sequenceLength - 1}/4`, 25, 90);
+    ctx.fillText(`Completed rounds: ${gameState.sequenceLength - 1}/2`, 25, 90);
 
     if (gameState.puzzleFailed) {
         ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';

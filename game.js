@@ -151,7 +151,7 @@ function updateUI() {
                         gameState.currentScene === 'level4' ? 'Level 4 - Great Wall' :
                             'Game Complete';
 
-    document.getElementById('watchParts').textContent = `${gameState.watchParts}/4`;
+    document.getElementById('watchParts').textContent = `${gameState.watchParts}/2`;
 
     if (gameState.timeLimit > 0 && !gameState.gameCompleted) {
         const elapsed = (Date.now() - gameState.gameStartTime) / 1000;
