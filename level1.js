@@ -1,3 +1,5 @@
+// === LEVEL 1 BARU DENGAN LEBIH BANYAK PLATFORM DAN TARGET RANDOM ===
+
 // Initialize gameState if it doesn't exist
 if (typeof gameState === 'undefined') {
     gameState = {
@@ -11,6 +13,16 @@ if (typeof gameState === 'undefined') {
 // Fungsi untuk menghasilkan angka acak dalam rentang
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// Fungsi untuk mengacak array (Fisher-Yates shuffle)
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
 }
 
 function startLevel1() {
@@ -30,13 +42,17 @@ function startLevel1() {
     gameState.canJump = true;
     gameState.interactionPressed = false;
 
-    // Rentang platform yang disesuaikan untuk estetika baru
+    // *** PENAMBAHAN PLATFORM BARU DI SINI ***
     const platformRanges = [
         { xMin: 150, xMax: 220, yMin: 470, yMax: 490, width: 130, height: 25 },
         { xMin: 300, xMax: 400, yMin: 420, yMax: 440, width: 150, height: 25 },
         { xMin: 480, xMax: 560, yMin: 370, yMax: 390, width: 120, height: 20 },
         { xMin: 620, xMax: 720, yMin: 320, yMax: 340, width: 160, height: 25 },
-        { xMin: 780, xMax: 860, yMin: 270, yMax: 290, width: 130, height: 20 }
+        { xMin: 780, xMax: 860, yMin: 270, yMax: 290, width: 130, height: 20 },
+        // Platform tambahan untuk lebih banyak variasi
+        { xMin: 80, xMax: 120, yMin: 400, yMax: 420, width: 110, height: 20 },  // Platform rendah di kiri
+        { xMin: 250, xMax: 310, yMin: 300, yMax: 320, width: 140, height: 20 }, // Platform tengah
+        { xMin: 700, xMax: 750, yMin: 200, yMax: 220, width: 120, height: 20 }  // Platform tinggi di kanan
     ];
 
     gameState.level1Platforms = platformRanges.map(range => ({
@@ -46,41 +62,82 @@ function startLevel1() {
         height: range.height,
     }));
 
+    // Semua permukaan yang bisa dijadikan tempat spawn objek (termasuk tanah dan platform)
     const allSpawnSurfaces = [
-        { x: 0, y: 540, width: 1000 },
+        { x: 0, y: 540, width: 1000 }, // Tanah dasar
         ...gameState.level1Platforms
     ];
 
-    for (let i = allSpawnSurfaces.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [allSpawnSurfaces[i], allSpawnSurfaces[j]] = [allSpawnSurfaces[j], allSpawnSurfaces[i]];
-    }
+    // Acak urutan permukaan untuk spawn objek
+    const shuffledSpawnSurfaces = shuffleArray(allSpawnSurfaces);
 
-    const objectStartLocations = allSpawnSurfaces.slice(0, 3).map(surface => ({
-        x: getRandomInt(surface.x, surface.x + surface.width - 30),
+    // Ambil 3 permukaan pertama untuk spawn objek
+    const objectStartLocations = shuffledSpawnSurfaces.slice(0, 3).map(surface => ({
+        x: getRandomInt(surface.x + 10, surface.x + surface.width - 40), // Margin dari tepi
         y: surface.y - 18
     }));
 
-    const possibleTargetLocations = gameState.level1Platforms.slice(0, 3).map(platform => ({
-        x: getRandomInt(platform.x, platform.x + platform.width - 30),
-        y: platform.y - 18
-    }));
+    // *** MODIFIKASI UTAMA: TARGET OBJEK RANDOM DI SEMUA PLATFORM ***
+    // Semua permukaan yang bisa dijadikan tempat target (hanya platform, tidak termasuk tanah)
+    const allTargetSurfaces = [...gameState.level1Platforms];
+    
+    // Acak urutan permukaan untuk target
+    const shuffledTargetSurfaces = shuffleArray(allTargetSurfaces);
 
-    for (let i = possibleTargetLocations.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [possibleTargetLocations[i], possibleTargetLocations[j]] = [possibleTargetLocations[j], possibleTargetLocations[i]];
+    // Buat lokasi target random di platform yang berbeda
+    const targetLocations = [];
+    for (let i = 0; i < 3 && i < shuffledTargetSurfaces.length; i++) {
+        const surface = shuffledTargetSurfaces[i];
+        targetLocations.push({
+            x: getRandomInt(surface.x + 10, surface.x + surface.width - 40), // Margin dari tepi
+            y: surface.y - 18
+        });
     }
 
+    // Jika tidak ada cukup platform untuk target, gunakan platform yang sama dengan posisi berbeda
+    while (targetLocations.length < 3) {
+        const randomPlatform = gameState.level1Platforms[getRandomInt(0, gameState.level1Platforms.length - 1)];
+        targetLocations.push({
+            x: getRandomInt(randomPlatform.x + 10, randomPlatform.x + randomPlatform.width - 40),
+            y: randomPlatform.y - 18
+        });
+    }
+
+    // Buat objek dengan lokasi spawn dan target yang sudah diacak
     gameState.level1Objects = [
-        { x: objectStartLocations[0].x, y: objectStartLocations[0].y, shape: 'triangle', placed: false, carrying: false, targetX: possibleTargetLocations[0].x, targetY: possibleTargetLocations[0].y },
-        { x: objectStartLocations[1].x, y: objectStartLocations[1].y, shape: 'circle', placed: false, carrying: false, targetX: possibleTargetLocations[1].x, targetY: possibleTargetLocations[1].y },
-        { x: objectStartLocations[2].x, y: objectStartLocations[2].y, shape: 'square', placed: false, carrying: false, targetX: possibleTargetLocations[2].x, targetY: possibleTargetLocations[2].y }
+        { 
+            x: objectStartLocations[0].x, 
+            y: objectStartLocations[0].y, 
+            shape: 'triangle', 
+            placed: false, 
+            carrying: false, 
+            targetX: targetLocations[0].x, 
+            targetY: targetLocations[0].y 
+        },
+        { 
+            x: objectStartLocations[1].x, 
+            y: objectStartLocations[1].y, 
+            shape: 'circle', 
+            placed: false, 
+            carrying: false, 
+            targetX: targetLocations[1].x, 
+            targetY: targetLocations[1].y 
+        },
+        { 
+            x: objectStartLocations[2].x, 
+            y: objectStartLocations[2].y, 
+            shape: 'square', 
+            placed: false, 
+            carrying: false, 
+            targetX: targetLocations[2].x, 
+            targetY: targetLocations[2].y 
+        }
     ];
 
     updateUI();
     showStory(
         "Machu Picchu - The Ancient Puzzle",
-        "Milo arrives at the mystical ruins of Machu Picchu! Navigate the ancient terraces by placing stone blocks correctly. Pick up stones with E, jump between platforms with SPACE, and place stones on the glowing outlines with E. Use WASD to move around.",
+        "Milo arrives at the mystical ruins of Machu Picchu! Navigate the ancient terraces by placing stone blocks correctly. Pick up stones with E, jump between platforms with SPACE, and place stones on the glowing outlines with E. Use WASD to move around. Each playthrough has randomized locations!",
         () => { }
     );
 }
@@ -156,15 +213,19 @@ function drawLevel1() {
 
     // Logika untuk menyelesaikan level
     if (gameState.level1Objects.every(obj => obj.placed)) {
-        const finalPlatform = gameState.level1Platforms[4];
+        // Pilih platform tertinggi secara dinamis untuk pocket watch
+        const highestPlatform = gameState.level1Platforms.reduce((highest, current) => 
+            current.y < highest.y ? current : highest
+        );
+        
         ctx.save();
         ctx.shadowColor = '#FFD700';
         ctx.shadowBlur = 30;
-        drawPocketWatch(finalPlatform.x + finalPlatform.width / 2, finalPlatform.y - 20);
+        drawPocketWatch(highestPlatform.x + highestPlatform.width / 2, highestPlatform.y - 20);
         ctx.restore();
 
-        if (Math.abs(gameState.miloPosition.x - (finalPlatform.x + finalPlatform.width / 2)) < 60 &&
-            Math.abs(gameState.miloPosition.y - (finalPlatform.y - 20)) < 80) {
+        if (Math.abs(gameState.miloPosition.x - (highestPlatform.x + highestPlatform.width / 2)) < 60 &&
+            Math.abs(gameState.miloPosition.y - (highestPlatform.y - 20)) < 80) {
             ctx.save();
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             ctx.strokeStyle = '#FFD700';
@@ -242,7 +303,6 @@ function drawStonePlatform(x, y, width, height) {
     ctx.lineWidth = 2;
     ctx.strokeRect(x, y, width, height);
 }
-
 
 function drawIncanDecorations() {
     // Pola geometris di latar belakang
