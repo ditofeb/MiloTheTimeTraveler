@@ -1,16 +1,3 @@
-function handleMouseDown() {
-    if (gameState.currentScene === 'level1') {
-        handleMouseDownLevel1();
-    } else if (gameState.currentScene === 'level2') {
-        handleMouseDownLevel2();
-    }
-}
-
-function handleObjectDrop() {
-    if (gameState.currentScene === 'level1') {
-        handleObjectDropLevel1();
-    }
-}
 
 function gameLoop() {
     if (isPaused) return;
